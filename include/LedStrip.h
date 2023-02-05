@@ -5,7 +5,7 @@
 #include <Wire.h>
 
 enum Status {
-    ON = HIGH, OFF = LOW
+    ON = 255, OFF = 0
 };
 
 class LedStrip {
@@ -14,9 +14,9 @@ class LedStrip {
   void setPinAsDigitalOutput(uint8_t pin);
 
  public:
-  void red(Status status);
-  void green(Status status);
-  void blue(Status status);
+  void red(uint8_t value);
+  void green(uint8_t value);
+  void blue(uint8_t value);
   void disable();
 
   LedStrip(uint8_t redPin, uint8_t greenPin, uint8_t bluePin);
