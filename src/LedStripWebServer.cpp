@@ -24,10 +24,24 @@ void LedStripWebServer::initEndpoints() {
     };
   });
 
+   server->on("/getLedStripIds", [&]() {
+    String response = "{ \"ids\" : [ ";
+    uint8_t added = 0;
+    for(auto const& imap: ledStrips) {
+        response += imap.first;
+        added++;
+        if(added < ledStrips.size()) {
+            response += ", ";
+        }
+    }
+    response += " ]}";
+    server->send(200, "application/json", response);
+  });
+
   server->on("/changeColor", HTTP_POST, [&]() {
     StaticJsonDocument<200> doc;
     deserializeJson(doc, server->arg("plain"));
-    uint8_t id = doc["id"], red = doc["red"], green = doc["green"], blue = doc["blue"];
+    uint8_t id = doc["id"], red = doc["r"], green = doc["g"], blue = doc["b"];
     if(ledStrips.find(id) != ledStrips.end()) {
         LedStrip* ledStrip = ledStrips[id];
         ledStrip->red(red);
@@ -45,6 +59,7 @@ LedStripWebServer::LedStripWebServer(/* args */) {
     LittleFS.begin();
     server = new ESP8266WebServer(80);
     initEndpoints();
+    server->serveStatic("/", LittleFS, "/");
     server->begin();
 }
 
