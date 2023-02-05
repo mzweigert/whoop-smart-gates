@@ -4,8 +4,10 @@
 #include <WiFiConnector.h>
 
 int time_del = 1000;
+WiFiConnector *wiFiConnector = new WiFiConnector();
 void setup() {
   Serial.begin(9600);
+  EEPROMManager::init();
   LedStrip* firstStrip = new LedStrip(FIRST_RED, FIRST_GREEN, FIRST_BLUE);
   LedStrip* secondStrip = new LedStrip(SECOND_RED, SECOND_GREEN, SECOND_BLUE);
   LedStrip* thirdStrip = new LedStrip(THIRD_RED, THIRD_GREEN, THIRD_BLUE);
@@ -27,17 +29,24 @@ void setup() {
   secondStrip->blue(ON);
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, HIGH);
-  boolean connected = WiFiConnector::connectToWiFi();
+  delay(time_del * 3);
+  boolean connected = wiFiConnector->connectToWiFi();
   if (connected) {
     digitalWrite(LED_BUILTIN, LOW);
   }
 }
 
 void loop() {
-   WiFiConnector::loop();
-   boolean connected = WiFiConnector::isConnected();
-   if (connected && digitalRead(BUILTIN_LED)) {
+   if(wiFiConnector != NULL) {
+    wiFiConnector->loop();
+    boolean connected = wiFiConnector->isConnected();
+    if (connected) {
      digitalWrite(LED_BUILTIN, LOW);
+     wiFiConnector->~WiFiConnector();
+     wiFiConnector = NULL;
+    }
+   } else {
+
    }
    
 }

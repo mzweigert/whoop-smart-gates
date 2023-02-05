@@ -5,9 +5,9 @@
 
 #include "PersWiFiManager.h"
 
-PersWiFiManager::PersWiFiManager(ESP8266WebServer& s, DNSServer& d) {
-  _server = &s;
-  _dnsServer = &d;
+PersWiFiManager::PersWiFiManager() {
+  _server = new ESP8266WebServer(80);
+  _dnsServer = new DNSServer();
   _apPass = "";
 }  //PersWiFiManager
 
@@ -30,8 +30,7 @@ bool PersWiFiManager::attemptConnection(const String& ssid, const String& pass) 
     delay(10);
   }
 
-  return (WiFi.status() == WL_CONNECTED);
-
+  return WiFi.status() == WL_CONNECTED;
 }  //attemptConnection
 
 void PersWiFiManager::handleWiFi() {
@@ -105,8 +104,9 @@ void PersWiFiManager::setupWiFiHandlers() {
   });  //_server->on /wifi/list
 
   _server->on("/wifi/connect", HTTP_POST, [&]() {
+    String ssid = _server->arg("n"), pass = _server->arg("p");
+    attemptConnection(ssid, pass);
     _server->send(200, "text/html", "connecting...");
-    attemptConnection(_server->arg("n"), _server->arg("p"));
   });  //_server->on /wifi/connect
 
   _server->on("/wifi/ap", [&]() {
@@ -130,15 +130,26 @@ void PersWiFiManager::setupWiFiHandlers() {
        _server->send(200, "text/html", index);
     } else {
       _server->send(404, "text/plain", "404: Not Found");
-    }
-     ;
+    };
   });
 }  //setupWiFiHandlers
 
-bool PersWiFiManager::begin(const String& ssid, const String& pass) {
+void PersWiFiManager::begin() {
+  LittleFS.begin();
+  _server->begin();
   setupWiFiHandlers();
-  return attemptConnection(ssid, pass);  //switched order of these two for return
 }  //begin
+
+void PersWiFiManager::loopServers(){
+    _dnsServer->processNextRequest();
+    _server->handleClient();
+}
+
+void PersWiFiManager::stopServers() {
+   LittleFS.end();
+   _dnsServer->stop();
+  _server->stop();
+}
 
 String PersWiFiManager::getApSsid() {
   return _apSsid.length() ? _apSsid : "ESP8266";

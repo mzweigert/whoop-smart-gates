@@ -5,6 +5,7 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <LittleFS.h>
+#include <EEPROMManager.h>
 
 #define WIFI_CONNECT_TIMEOUT 30
 
@@ -13,13 +14,13 @@ class PersWiFiManager {
  public:
   typedef std::function<void(void)> WiFiChangeHandlerFunction;
 
-  PersWiFiManager(ESP8266WebServer& s, DNSServer& d);
+  PersWiFiManager();
 
   bool attemptConnection(const String& ssid = "", const String& pass = "");
 
   void setupWiFiHandlers();
 
-  bool begin(const String& ssid = "", const String& pass = "");
+  void begin();
 
   String getApSsid();
 
@@ -35,15 +36,20 @@ class PersWiFiManager {
 
   void onAp(WiFiChangeHandlerFunction fn);
 
+  void loopServers();
+
+  void stopServers();
+
  private:
   ESP8266WebServer* _server;
   DNSServer* _dnsServer;
+  EEPROMManager* _eepromManager;
   String _apSsid, _apPass;
 
   bool _connectNonBlock;
   unsigned long _connectStartTime;
   bool _freshConnectionAttempt;
-  
+
   WiFiChangeHandlerFunction _connectHandler;
   WiFiChangeHandlerFunction _apHandler;
 

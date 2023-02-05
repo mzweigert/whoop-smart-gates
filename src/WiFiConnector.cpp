@@ -1,57 +1,58 @@
-#include "WiFiConnector.h"
+#include <WiFiConnector.h>
 
-#include <DNSServer.h>
-#include <ESP8266WiFi.h>
-#include <FS.h>
-
-#include "PersWiFiManager.h"
-#include "ESP8266WebServer.h"
-
-#define DEBUG_PRINT(x) Serial.println(x)
-#define DEVICE_NAME "ESP8266 DEVICE"
-
-ESP8266WebServer server(80);
-DNSServer dnsServer;
-PersWiFiManager persWM(server, dnsServer);
 bool wiFiConnected = false;
-bool canStopServers = false;
 
 bool WiFiConnector::isConnected() {
   return wiFiConnected;
 }
 
 bool WiFiConnector::connectToWiFi() {
-  persWM.onConnect([]() {
+  persWM->onConnect([]() {
     DEBUG_PRINT("wifi connected");
     DEBUG_PRINT(WiFi.localIP());
-    wiFiConnected = canStopServers = true;
+    wiFiConnected = true;
+    EEPROMManager::writeString(SSID_ADDRESS, WiFi.SSID());
+    EEPROMManager::writeString(PASS_ADDRESS, WiFi.psk());
   });
   //...or AP mode is started
-  persWM.onAp([]() {
-    DEBUG_PRINT("AP MODE");
-    DEBUG_PRINT(persWM.getApSsid());
+  persWM->onAp([]() {
+    DEBUG_PRINT("AP MODE Initialized!");
+    DEBUG_PRINT(DEVICE_NAME);
   });
 
-  LittleFS.begin();
-  //sets network name for AP mode
-  persWM.setApCredentials(DEVICE_NAME);
+  String ssid = EEPROMManager::readString(SSID_ADDRESS, 32);
+  String password = EEPROMManager::readString(PASS_ADDRESS, 64);
+  persWM->attemptConnection(ssid, password);
 
-  //make connecting/disconnecting non-blocking
-  persWM.setConnectNonBlock(true);
+  uint8_t status = WiFi.waitForConnectResult();
 
-  server.begin();
-  return persWM.begin();
+  if(status != WL_CONNECTED) {
+    DEBUG_PRINT("Intitialize AP MODE...");
+    //sets network name for AP mode
+    persWM->setApCredentials(DEVICE_NAME);
+    //make connecting/disconnecting non-blocking
+    persWM->setConnectNonBlock(true);
+    persWM->begin();
+    return false;
+  } 
+  DEBUG_PRINT("wifi connected");
+  DEBUG_PRINT(WiFi.localIP());
+  wiFiConnected = true;
+  return true;
 }
 
 void WiFiConnector::loop() {
   //in non-blocking mode, handleWiFi must be called in the main loop
   if (!wiFiConnected) {
-    persWM.handleWiFi();
-    dnsServer.processNextRequest();
-    server.handleClient();
-  } else if (canStopServers) {
-    dnsServer.stop();
-    server.stop();
-    canStopServers = false;
-  }
+    persWM->handleWiFi();
+    persWM->loopServers();
+  } 
+}
+WiFiConnector::WiFiConnector() {
+  this->persWM = new PersWiFiManager();
+}
+
+WiFiConnector::~WiFiConnector() {
+  DEBUG_PRINT("Stop AP servers...");
+  persWM->stopServers();
 }
