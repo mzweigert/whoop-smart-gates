@@ -7,22 +7,26 @@ void LedStrip::setPinAsDigitalOutput(uint8_t pin) {
     pinMode(pin, OUTPUT);
 }
 
-void LedStrip::red(uint8_t value) {
-    analogWrite(redPin, value);
+void LedStrip::rgb(uint8_t red, uint8_t green, uint8_t blue) {
+    analogWrite(this->redPin, red);
+    analogWrite(this->greenPin, green);
+    analogWrite(this->bluePin, blue);
 }
 
-void LedStrip::green(uint8_t value) {
-     analogWrite(greenPin, value);
+uint8_t LedStrip::red() {
+    return map(analogRead(this->redPin), 0, 1023, OFF, ON);
 }
 
-void LedStrip::blue(uint8_t value) {
-     analogWrite(bluePin, value);
+uint8_t LedStrip::green() {
+    return map(analogRead(this->greenPin), 0, 1023, OFF, ON);
+}
+
+uint8_t LedStrip::blue() {
+    return map(analogRead(this->bluePin), 0, 1023, OFF, ON);
 }
 
 void LedStrip::disable(){
-    digitalWrite(redPin, OFF);
-    digitalWrite(greenPin, OFF);
-    digitalWrite(bluePin, OFF);
+    rgb(OFF, OFF, OFF);
 }
 
 LedStrip::LedStrip(uint8_t redPin, uint8_t greenPin, uint8_t bluePin) {

@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <RGBPins.h>
 #include <LedStrip.h>
+#include <EEPROMManager.h>
 #include <WiFiConnector.h>
 #include <LedStripWebServer.h>
 

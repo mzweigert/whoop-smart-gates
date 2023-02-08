@@ -5,7 +5,7 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <LittleFS.h>
-#include <EEPROMManager.h>
+
 
 #define WIFI_CONNECT_TIMEOUT 30
 
@@ -43,7 +43,6 @@ class PersWiFiManager {
  private:
   ESP8266WebServer* _server;
   DNSServer* _dnsServer;
-  EEPROMManager* _eepromManager;
   String _apSsid, _apPass;
 
   bool _connectNonBlock;

@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
     <title>Whoop gates!</title>
     <link rel="stylesheet" type="text/css" href="./css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="./css/bootstrap-toggle.min.css">
     <script src="./js/jquery-3.6.3.min.js"></script>
+    <script src="./js/bootstrap-toggle.min.js"></script>
     <script src="./js/iro.min.js"></script>
     <script src="./js/led-strips.js"></script>
 </head>
@@ -13,6 +15,9 @@
 <body>
     <div class="jumbotron table-responsive" id="color-pickers-container">
         <h2 class="text-center">Pick your color for gate</h2>
+        <div class="text-center">
+            <input id="leds-enabled" type="checkbox" checked data-onstyle="success" data-offstyle="danger">
+        </div>
     </div>
 </body>
 
