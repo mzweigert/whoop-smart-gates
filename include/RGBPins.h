@@ -1,11 +1,19 @@
-#define FIRST_RED D2
-#define FIRST_GREEN D0
-#define FIRST_BLUE D5
+#ifndef RX
+#define RX 3
+#endif
 
-#define SECOND_RED D7
-#define SECOND_GREEN D6
-#define SECOND_BLUE D8
+#ifndef TX
+#define TX 1
+#endif
 
-#define THIRD_RED D1
-#define THIRD_GREEN D3
-#define THIRD_BLUE RX
+#define FIRST_RED 15
+#define FIRST_GREEN 13
+#define FIRST_BLUE 2
+
+#define SECOND_RED 9
+#define SECOND_GREEN 4
+#define SECOND_BLUE 10
+
+#define THIRD_RED 12
+#define THIRD_GREEN 5
+#define THIRD_BLUE 14

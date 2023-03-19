@@ -11,6 +11,7 @@
 class EEPROMManager {
 public:
   static bool writeString(int startAddress, String writeString);
+  static bool clear(int startAddress, int endAddress);
   static String readString(int startAddress, int size);
   static bool writeBytes(int address, uint8_t* bytes, int arraySize);
   static uint8_t* readBytes(int startAddress, int size, uint8_t* destination);

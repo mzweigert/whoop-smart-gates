@@ -11,6 +11,13 @@ bool EEPROMManager::writeString(int startAddress, String writeString) {
     return EEPROM.commit();
 }
 
+bool EEPROMManager::clear(int startAddress, int endAddress) {
+    for (unsigned int i = 0; i < endAddress - startAddress ; ++i){
+      EEPROM.write(startAddress + i, NULL);
+    }
+    return EEPROM.commit();
+}
+
 String EEPROMManager::readString(int startAddress, int maxLength) {
   String value = "";
   for (int i = 0; i < maxLength; ++i){
@@ -23,7 +30,6 @@ String EEPROMManager::readString(int startAddress, int maxLength) {
 }
 
 bool EEPROMManager::writeBytes(int address, uint8_t* bytes, int arraySize) {
-    Serial.println(arraySize);
     for (uint8_t i = 0; i < arraySize ; i++) {
          EEPROM.write(address + i, *(bytes + i));
     }

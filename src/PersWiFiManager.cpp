@@ -9,6 +9,7 @@ PersWiFiManager::PersWiFiManager() {
   _server = new ESP8266WebServer(80);
   _dnsServer = new DNSServer();
   _apPass = "";
+  _isRunning = false;
 }  //PersWiFiManager
 
 bool PersWiFiManager::attemptConnection(const String& ssid, const String& pass) {
@@ -138,6 +139,7 @@ void PersWiFiManager::begin() {
   LittleFS.begin();
   _server->begin();
   setupWiFiHandlers();
+  _isRunning = true;
 }  //begin
 
 void PersWiFiManager::loopServers(){
@@ -149,6 +151,11 @@ void PersWiFiManager::stopServers() {
    LittleFS.end();
    _dnsServer->stop();
   _server->stop();
+  _isRunning = false;
+}
+
+bool PersWiFiManager::isRunning() {
+  return _isRunning;
 }
 
 String PersWiFiManager::getApSsid() {

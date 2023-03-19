@@ -40,11 +40,14 @@ class PersWiFiManager {
 
   void stopServers();
 
+  bool isRunning();
+
  private:
   ESP8266WebServer* _server;
   DNSServer* _dnsServer;
   String _apSsid, _apPass;
-
+  bool _isRunning;
+  
   bool _connectNonBlock;
   unsigned long _connectStartTime;
   bool _freshConnectionAttempt;

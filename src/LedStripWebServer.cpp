@@ -105,18 +105,36 @@ void LedStripWebServer::initEndpoints() {
         server->send(404, "text/plain", "404: Not Found");
     }
   });
+
+  server->on("/reset", HTTP_GET, [&]() {
+    digitalWrite(16, LOW);
+    server->send(200, "text/plain", "Reset!");
+  });
 }
 
-LedStripWebServer::LedStripWebServer(/* args */) {
+LedStripWebServer::LedStripWebServer() {
     ledStrips = initLedStrips();
+    _isRunning = false;
+}
+
+void LedStripWebServer::begin() {
     LittleFS.begin();
     server = new ESP8266WebServer(80);
     initEndpoints();
     server->enableCORS(true);
     server->serveStatic("/", LittleFS, "/");
     server->begin();
+    _isRunning = true;
 }
 
+void LedStripWebServer::stop() {
+  server->stop();
+  _isRunning = false;
+}
 void LedStripWebServer::loop() {
   server->handleClient();
+}
+
+bool LedStripWebServer::isRunning() {
+  return _isRunning;
 }

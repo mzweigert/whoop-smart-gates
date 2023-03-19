@@ -6,32 +6,32 @@
 #include <LedStripWebServer.h>
 
 WiFiConnector *wiFiConnector = new WiFiConnector();
-LedStripWebServer* ledStripWebServer;
+LedStripWebServer* ledStripWebServer = new LedStripWebServer();
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
+  while (! Serial); 
+  delay(5000);
   EEPROMManager::init();
-  pinMode(LED_BUILTIN, OUTPUT);
-  digitalWrite(LED_BUILTIN, HIGH);
-  boolean connected = wiFiConnector->connectToWiFi();
-  if (connected) {
-    digitalWrite(LED_BUILTIN, LOW);
-  }
 }
 
 void loop() {
-   if(wiFiConnector != NULL) {
-    wiFiConnector->loop();
-    boolean connected = wiFiConnector->isConnected();
-    if (connected) {
-     digitalWrite(LED_BUILTIN, LOW);
-     wiFiConnector->~WiFiConnector();
-     wiFiConnector = NULL;
-    }
-   } else if(ledStripWebServer == NULL) {
-    ledStripWebServer = new LedStripWebServer();
+   if(!WiFi.isConnected() || wiFiConnector->status() == INITIALIZING || wiFiConnector->status() == IN_AP_MODE) {
+      if(ledStripWebServer->isRunning()) {
+        ledStripWebServer->stop();
+        Serial.println("led server stop");
+      }
+      wiFiConnector->loop();
    } else {
-    ledStripWebServer->loop();
+      if(wiFiConnector->canStopAPMode()) {
+        wiFiConnector->stop();
+        Serial.println("AP Mode stop");
+      }
+      if(!ledStripWebServer->isRunning()) {
+        Serial.println("led server begin");
+        ledStripWebServer->begin();
+      }
+      ledStripWebServer->loop();
    }
    
 }

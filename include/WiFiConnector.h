@@ -12,17 +12,26 @@
 #define DEBUG_PRINT(x) Serial.println(x)
 #define DEVICE_NAME "ESP8266 DEVICE"
 
+typedef enum {
+    INITIALIZING = 0,
+    IN_AP_MODE = 1,
+    CONNECTED = 2,
+    STOPPED = 3
+} conn_status;
+
 class WiFiConnector {
  private:
   PersWiFiManager *persWM;
 
  public:
-  bool isConnected();
+  conn_status status();
   bool connectToWiFi();
   void loop();
+  void stop();
+
+  bool canStopAPMode();
 
   WiFiConnector();
-  ~WiFiConnector();
 
 };
 

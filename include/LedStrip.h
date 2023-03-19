@@ -3,6 +3,7 @@
 
 #include <inttypes.h>
 #include <Arduino.h>
+#include <RGBPins.h>
 
 enum Status {
     ON = 255, OFF = 0
