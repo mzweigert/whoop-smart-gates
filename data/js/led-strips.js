@@ -1,60 +1,108 @@
-$(document).ready(function () {
+document.addEventListener("DOMContentLoaded", function() { 
     let host = '';
+    
+    function httpRequest(url, method, callback = null, body = null) {
+        let xmlHttp = new XMLHttpRequest();
+        xmlHttp.onreadystatechange = function() { 
+            if (xmlHttp.readyState == 4 && xmlHttp.status == 200 && callback) {
+                let responseBody;
+                try {
+                    responseBody = JSON.parse(xmlHttp.response);
+                } catch (e) {
+                    responseBody = xmlHttp.response;
+                }
+                callback(responseBody);
+            }
+        }
+        xmlHttp.open(method, url, true); // true for asynchronous 
+        xmlHttp.send(body);
+    }
+
 
     function onColorChange(id, colorRGB) {
         let data = colorRGB;
         data['id'] = Number(id);
-        $.post(host + '/changeColor', JSON.stringify(data));
+        httpRequest(host + '/changeColor', 'POST', null, JSON.stringify(data));
+    }
+
+    function createTableHeader(id) {
+        let $th = document.createElement('th');
+            $th.setAttribute('scope', 'col');
+            $th.classList.add('text-center');
+            $th.appendChild(document.createTextNode('Gate id: ' + id ));
+        return $th;
+    }
+    function createTableData(id, savedColors) {
+        let $td = document.createElement('td'), 
+            $container = document.createElement('div'); 
+            $container.style.display = 'flex' ;
+            $container.style.justifyContent = 'center';
+            let colors = savedColors.filter(obj => obj.id == id);
+            new iro.ColorPicker($container, { colors: colors })
+                .on('input:end', function (color) { onColorChange(id, color.rgb); });
+            $td.appendChild($container);
+        return $td;
     }
 
     function createGUIforMobile(ids, savedColors) {
+        let $colorPickersContainer = document.getElementById('color-pickers-container');
         for (let id in ids) {
-            let $table = $('<table class="table">'), $thead = $("<thead>"), $tbody = $("<tbody>"),
-                $tr = $("<tr>");
-            $thead.append($('<th scope="col" class="text-center"> Gate id: ' + id + '</th>'));
-            let $td = $("<td>"), $container = $('<div style="display: flex; justify-content:center;">');
-            let colors = savedColors.filter(obj => obj.id == id);
-            new iro.ColorPicker($container[0], { colors: colors })
-                .on('input:end', function (color) { onColorChange(id, color.rgb); });
-            $td.append($container);
-            $tr.append($td);
-            $table.append($thead).append($tbody.append($tr));
-            $('#color-pickers-container').append($table);
+            let $table = document.createElement('table'), 
+            $thead = document.createElement("thead"), 
+            $tbody = document.createElement("tbody"),
+            $tr = document.createElement("tr");
+            let $th = createTableHeader(id);
+            $thead.appendChild($th);
+            let $td = createTableData(id, savedColors);
+            $tr.appendChild($td);
+            $tbody.appendChild($tr)
+            $table.appendChild($thead);
+            $table.appendChild($tbody);
+            $table.classList.add('table');
+            $colorPickersContainer.appendChild($table);
         }
-
     }
 
     function createGUIforDesktop(ids, savedColors) {
-        let $table = $('<table class="table">'), $thead = $("<thead>"), $tbody = $("<tbody>"),
-            $tr = $("<tr>");
+        let $table = document.createElement('table'), 
+            $thead = document.createElement("thead"), 
+            $tbody = document.createElement("tbody"),
+            $tr    = document.createElement("tr");
         for (let id in ids) {
-            $thead.append($('<th scope="col" class="text-center"> Gate id: ' + id + '</th>'));
-            let $td = $("<td>"), $container = $('<div style="display: flex; justify-content:center;">');
-            let colors = savedColors.filter(obj => obj.id == id);
-            new iro.ColorPicker($container[0], { colors: colors })
-                .on('input:end', function (color) { onColorChange(id, color.rgb); });
-            $td.append($container);
-            $tr.append($td);
+            let $th = createTableHeader(id);
+            $thead.appendChild($th);
+            let $td = createTableData(id, savedColors);
+            $tr.appendChild($td);
         }
-        $table.append($thead).append($tbody.append($tr));
-        $('#color-pickers-container').append($table);
+        $tbody.appendChild($tr);
+        $table.appendChild($thead);
+        $table.appendChild($tbody);
+        $table.classList.add('table');
+        document.getElementById('color-pickers-container').appendChild($table);
+    }
+
+    function addStyleToToggleBtn(btn, state) {
+        btn.setAttribute("checked", state)
+        btn.className = '';
+        btn.classList.add('btn');
+        btn.classList.add(state ? 'btn-success' : 'btn-danger');
+        btn.innerText = state ? 'Enabled' : 'Disabled';
     }
 
     function initializeToggleBtn(enabled) {
-        let btn = $('#leds-enabled');
-        btn.attr("checked", enabled > 0 ? true : false)
-        btn.bootstrapToggle({ on: 'Enabled', off: 'Disabled' })
-            .change(function () {
-                let checked = $(this).prop('checked');
-                if (checked) {
-                    $.post(host + '/enable');
-                } else {
-                    $.post(host + '/disable');
-                }
-            })
+        let btn = document.getElementById('leds-enabled');
+        addStyleToToggleBtn(btn, enabled > 0);
+        btn.addEventListener("click", function() {
+            let checked = this.getAttribute("checked") == 'true';
+            let endpoint = checked ? '/disable' : '/enable';
+            httpRequest(host + endpoint, 'POST', () => {
+                addStyleToToggleBtn(btn, !checked);
+            });
+        });
     }
+    
     function initColorPickers(ids) {
-        $.getJSON(host + '/getLastStatus', function (data) {
+        httpRequest(host + '/getLastStatus', 'GET', function (data) {
             let enabled = data['enabled'];
             initializeToggleBtn(enabled);
             if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
@@ -65,7 +113,9 @@ $(document).ready(function () {
         });
 
     }
-    $.getJSON(host + '/getLedStripIds', function (data) {
+    httpRequest(host + '/getLedStripIds', 'GET', function (data) {
         initColorPickers(data['ids']);
     });
+
+
 });
