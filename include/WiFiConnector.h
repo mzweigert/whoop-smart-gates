@@ -6,7 +6,6 @@
 #include <FS.h>
 
 #include <PersWiFiManager.h>
-#include <ESP8266WebServer.h>
 #include <EEPROMManager.h>
 
 #define DEBUG_PRINT(x) Serial.println(x)

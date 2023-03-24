@@ -6,7 +6,7 @@
 #include "PersWiFiManager.h"
 
 PersWiFiManager::PersWiFiManager() {
-  _server = new ESP8266WebServer(80);
+  _server = new AsyncWebServer(80);
   _dnsServer = new DNSServer();
   _apPass = "";
   _isRunning = false;
@@ -71,7 +71,7 @@ void PersWiFiManager::setupWiFiHandlers() {
   _dnsServer->setErrorReplyCode(DNSReplyCode::NoError);
   _dnsServer->start((byte)53, "*", apIP);  //used for captive portal in AP mode
 
-  _server->on("/wifi/list", [&]() {
+  _server->on("/wifi/list", [&](AsyncWebServerRequest *request) {
     //scan for wifi networks
     int n = WiFi.scanNetworks();
 
@@ -101,22 +101,22 @@ void PersWiFiManager::setupWiFiHandlers() {
     }
 
     //send string to client
-    _server->send(200, "text/plain", s);
+    request->send(200, "text/plain", s);
   });  //_server->on /wifi/list
 
-  _server->on("/wifi/connect", HTTP_POST, [&]() {
-    String ssid = _server->arg("n"), pass = _server->arg("p");
+  _server->on("/wifi/connect", HTTP_POST, [&](AsyncWebServerRequest *request) {
+    String ssid = request->arg("n"), pass = request->arg("p");
     attemptConnection(ssid, pass);
-    _server->send(200, "text/html", "connecting...");
+    request->send(200, "text/html", "connecting...");
   });  //_server->on /wifi/connect
 
-  _server->on("/wifi/ap", [&]() {
-    _server->send(200, "text/html", "access point: " + getApSsid());
+  _server->on("/wifi/ap", [&](AsyncWebServerRequest *request) {
+    request->send(200, "text/html", "access point: " + getApSsid());
     startApMode();
   });  //_server->on /wifi/ap
 
-  _server->on("/wifi/rst", [&]() {
-    _server->send(200, "text/html", "Rebooting...");
+  _server->on("/wifi/rst", [&](AsyncWebServerRequest *request) {
+    request->send(200, "text/html", "Rebooting...");
     delay(100);
     //ESP.restart();
     // Adding Safer Restart method
@@ -125,13 +125,8 @@ void PersWiFiManager::setupWiFiHandlers() {
     delay(2000);
   });
 
-  _server->on("/", HTTP_GET, [&]() {
-    File index = LittleFS.open("/wifi.html", "r");
-    if (index) {
-       _server->send(200, "text/html", index);
-    } else {
-      _server->send(404, "text/plain", "404: Not Found");
-    };
+  _server->on("/", HTTP_GET, [&](AsyncWebServerRequest *request) {
+    request->send(LittleFS, "/wifi.html", "text/html");
   });
 }  //setupWiFiHandlers
 
@@ -144,13 +139,12 @@ void PersWiFiManager::begin() {
 
 void PersWiFiManager::loopServers(){
     _dnsServer->processNextRequest();
-    _server->handleClient();
 }
 
 void PersWiFiManager::stopServers() {
    LittleFS.end();
    _dnsServer->stop();
-  _server->stop();
+  _server->end();
   _isRunning = false;
 }
 

@@ -23,16 +23,12 @@ std::map<uint8_t, LedStrip*> LedStripWebServer::initLedStrips() {
 }
 
 void LedStripWebServer::initEndpoints() {
-  server->on("/", [&]() {
-    File index = LittleFS.open("/index.html", "r");
-    if (index) {
-       server->send(200, "text/html", index);
-    } else {
-      server->send(404, "text/plain", "404: Not Found");
-    };
+  server->on("/", [] (AsyncWebServerRequest *request) {
+    Serial.println("Send index...");
+    request->send(LittleFS, "/index.html");
   });
 
-   server->on("/getLedStripIds", [&]() {
+  server->on("/getLedStripIds", [&] (AsyncWebServerRequest *request) {
     String response = "{ \"ids\" : [ ";
     uint8_t added = 0;
     for(auto const& imap: ledStrips) {
@@ -43,11 +39,11 @@ void LedStripWebServer::initEndpoints() {
         }
     }
     response += " ]}";
-    server->send(200, "application/json", response);
+    request->send(200, "application/json", response);
   });
 
   
-  server->on("/getLastStatus", [&]() {
+  server->on("/getLastStatus", [&] (AsyncWebServerRequest *request) {
     String response = "{ \"enabled\" : ";
     response += EEPROMManager::readByte(ENABLED_ADDRESS) > 0;
     response += ", \"ledStrips\": [";
@@ -67,30 +63,30 @@ void LedStripWebServer::initEndpoints() {
         }
     }
     response += " ]}";
-    server->send(200, "application/json", response);
+    request->send(200, "application/json", response);
   });
 
-  server->on("/disable", HTTP_POST, [&]() {
+  server->on("/disable", HTTP_POST, [&] (AsyncWebServerRequest *request) {
       for(auto const& imap: ledStrips) {
         imap.second->disable();
       }
       EEPROMManager::writeByte(ENABLED_ADDRESS, OFF);
-      server->send(200, "text/plain", "Disabled!");
+      request->send(200, "text/plain", "Disabled!");
   });
 
-  server->on("/enable", HTTP_POST, [&]() {
+  server->on("/enable", HTTP_POST, [&] (AsyncWebServerRequest *request) {
       for(auto const& imap: ledStrips) {
         uint8_t bytes[3];
         uint8_t* colors = EEPROMManager::readBytes(SAVED_COLORS_LED_STRIPS_ADDRESS + (imap.first * 3), 3, bytes);
         imap.second->rgb(*(colors), *(colors + 1), *(colors + 2));
       }
       EEPROMManager::writeByte(ENABLED_ADDRESS, ON);
-      server->send(200, "text/plain", "Enabled!");
+      request->send(200, "text/plain", "Enabled!");
   });
 
-  server->on("/changeColor", HTTP_POST, [&]() {
+  server->on("/changeColor", HTTP_POST, [&] (AsyncWebServerRequest *request) {
     StaticJsonDocument<200> doc;
-    deserializeJson(doc, server->arg("plain"));
+    deserializeJson(doc, request->arg("body"));
     uint8_t id = doc["id"], red = doc["r"], green = doc["g"], blue = doc["b"];
     if(ledStrips.find(id) != ledStrips.end()) {
         uint8_t colors[] = {red, green, blue};
@@ -100,15 +96,16 @@ void LedStripWebServer::initEndpoints() {
             LedStrip* ledStrip = ledStrips[id];
             ledStrip->rgb(red, green, blue);
         }
-        server->send(200, "text/plain", "Changed!");
+        request->send(200, "text/plain", "Changed!");
     } else {
-        server->send(404, "text/plain", "404: Not Found");
+        request->send(404, "text/plain", "404: Not Found");
     }
   });
 
-  server->on("/reset", HTTP_GET, [&]() {
-    digitalWrite(16, LOW);
-    server->send(200, "text/plain", "Reset!");
+  server->on("/reset", HTTP_GET, [] (AsyncWebServerRequest *request) {
+    request->redirect("/");
+    pinMode(WAKE_UP, OUTPUT);
+    digitalWrite(WAKE_UP, LOW);
   });
 }
 
@@ -119,20 +116,17 @@ LedStripWebServer::LedStripWebServer() {
 
 void LedStripWebServer::begin() {
     LittleFS.begin();
-    server = new ESP8266WebServer(80);
+    server = new AsyncWebServer(80);
     initEndpoints();
-    server->enableCORS(true);
     server->serveStatic("/", LittleFS, "/");
     server->begin();
     _isRunning = true;
 }
 
 void LedStripWebServer::stop() {
-  server->stop();
+  LittleFS.end();
+  server->end();
   _isRunning = false;
-}
-void LedStripWebServer::loop() {
-  server->handleClient();
 }
 
 bool LedStripWebServer::isRunning() {

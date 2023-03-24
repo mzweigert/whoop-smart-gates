@@ -13,7 +13,7 @@ bool EEPROMManager::writeString(int startAddress, String writeString) {
 
 bool EEPROMManager::clear(int startAddress, int endAddress) {
     for (unsigned int i = 0; i < endAddress - startAddress ; ++i){
-      EEPROM.write(startAddress + i, NULL);
+      EEPROM.write(startAddress + i, 0);
     }
     return EEPROM.commit();
 }
@@ -22,7 +22,9 @@ String EEPROMManager::readString(int startAddress, int maxLength) {
   String value = "";
   for (int i = 0; i < maxLength; ++i){
     uint8_t saved = EEPROM.read(startAddress + i);
-    if(saved == 255) break;
+    if(saved < 32 || saved == 255) {
+      break;
+    }
     value += char(saved);
   }
 

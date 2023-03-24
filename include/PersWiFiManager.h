@@ -3,7 +3,7 @@
 
 #include <DNSServer.h>
 #include <ESP8266WiFi.h>
-#include <ESP8266WebServer.h>
+#include <ESPAsyncWebServer.h>
 #include <LittleFS.h>
 
 
@@ -43,7 +43,7 @@ class PersWiFiManager {
   bool isRunning();
 
  private:
-  ESP8266WebServer* _server;
+  AsyncWebServer* _server;
   DNSServer* _dnsServer;
   String _apSsid, _apPass;
   bool _isRunning;

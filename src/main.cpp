@@ -31,7 +31,6 @@ void loop() {
         Serial.println("led server begin");
         ledStripWebServer->begin();
       }
-      ledStripWebServer->loop();
    }
    
 }

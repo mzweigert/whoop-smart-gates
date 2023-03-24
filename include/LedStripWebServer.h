@@ -5,13 +5,13 @@
 #include <LittleFS.h>
 #include <RGBPins.h>
 #include <LedStrip.h>
-#include <ESP8266WebServer.h>
+#include <ESPAsyncWebServer.h>
 #include <EEPROMManager.h>
 
 class LedStripWebServer {
 private:
     std::map<uint8_t, LedStrip*> ledStrips;
-    ESP8266WebServer* server;
+    AsyncWebServer* server;
     bool _isRunning;
 
     uint8_t clampValue(uint8_t value);
