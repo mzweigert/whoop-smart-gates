@@ -5,18 +5,20 @@
 #include <WiFiConnector.h>
 #include <LedStripWebServer.h>
 
-WiFiConnector *wiFiConnector = new WiFiConnector();
-LedStripWebServer* ledStripWebServer = new LedStripWebServer();
+WiFiConnector *wiFiConnector;
+LedStripWebServer* ledStripWebServer ;
 
 void setup() {
   Serial.begin(115200);
   while (! Serial); 
-  delay(5000);
+  delay(10000);
   EEPROMManager::init();
+  wiFiConnector = new WiFiConnector();
+  ledStripWebServer = new LedStripWebServer();;
 }
 
 void loop() {
-   if(!WiFi.isConnected() || wiFiConnector->status() == INITIALIZING || wiFiConnector->status() == IN_AP_MODE) {
+   if(!WiFi.isConnected() || wiFiConnector->status() != CONNECTED) {
       if(ledStripWebServer->isRunning()) {
         ledStripWebServer->stop();
         Serial.println("led server stop");

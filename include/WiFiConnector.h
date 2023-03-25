@@ -14,14 +14,16 @@
 typedef enum {
     INITIALIZING = 0,
     IN_AP_MODE = 1,
-    CONNECTED = 2,
-    STOPPED = 3
+    CONNECTING = 2,
+    CONNECTED = 3
 } conn_status;
 
 class WiFiConnector {
  private:
   PersWiFiManager *persWM;
-
+  String ssid, password;
+  conn_status _status;
+  
  public:
   conn_status status();
   bool connectToWiFi();

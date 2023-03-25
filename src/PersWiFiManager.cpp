@@ -16,42 +16,48 @@ bool PersWiFiManager::attemptConnection(const String& ssid, const String& pass) 
   //attempt to connect to wifi
   WiFi.mode(WIFI_STA);
   if (ssid.length()) {
-    if (pass.length())
-      WiFi.begin(ssid.c_str(), pass.c_str());
-    else
-      WiFi.begin(ssid.c_str());
+    WiFi.disconnect(); // To avoid issues (experience from WiFiManager)
+    if (pass.length()) WiFi.begin(ssid.c_str(), pass.c_str());
+    else WiFi.begin(ssid.c_str());
   } else {
-    WiFi.begin();
+    if((WiFi.SSID() == "") && (WiFi.status() != WL_CONNECTED)) { // No saved credentials, so skip trying to connect
+      _connectStartTime = millis();
+      _freshConnectionAttempt = true;
+      return false;
+    } else {
+      WiFi.begin();
+    }
   }
 
   //if in nonblock mode, skip this loop
-  _connectStartTime = millis();  // + 1;
+  _connectStartTime = millis();// + 1;
   while (!_connectNonBlock && _connectStartTime) {
     handleWiFi();
     delay(10);
   }
 
-  return WiFi.status() == WL_CONNECTED;
-}  //attemptConnection
+  return (WiFi.status() == WL_CONNECTED);
+
+} //attemptConnection
 
 void PersWiFiManager::handleWiFi() {
   if (!_connectStartTime) return;
 
+  Serial.println(WiFi.status());
   if (WiFi.status() == WL_CONNECTED) {
     _connectStartTime = 0;
     if (_connectHandler) _connectHandler();
     return;
   }
 
-  //if failed or not connected and time is up
-  if ((WiFi.status() == WL_CONNECT_FAILED) ||
-      ((WiFi.status() != WL_CONNECTED) &&
-       ((millis() - _connectStartTime) > (1000 * WIFI_CONNECT_TIMEOUT)))) {
+  //if failed or no saved SSID or no WiFi credentials were found or not connected and time is up
+  if ((WiFi.status() == WL_CONNECT_FAILED) || _freshConnectionAttempt || ((WiFi.status() != WL_CONNECTED) && ((millis() - _connectStartTime) > (1000 * WIFI_CONNECT_TIMEOUT)))) {
     startApMode();
-    _connectStartTime = 0;  //reset connect start time
+    _connectStartTime = 0; //reset connect start time
+    _freshConnectionAttempt = false;
   }
 
-}  //handleWiFi
+} //handleWiFi
 
 void PersWiFiManager::startApMode() {
   //start AP mode

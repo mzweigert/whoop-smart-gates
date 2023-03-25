@@ -7,6 +7,7 @@
 #include <LedStrip.h>
 #include <ESPAsyncWebServer.h>
 #include <EEPROMManager.h>
+#include <AsyncJson.h>
 
 class LedStripWebServer {
 private:

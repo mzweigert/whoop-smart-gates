@@ -84,10 +84,10 @@ void LedStripWebServer::initEndpoints() {
       request->send(200, "text/plain", "Enabled!");
   });
 
-  server->on("/changeColor", HTTP_POST, [&] (AsyncWebServerRequest *request) {
-    StaticJsonDocument<200> doc;
-    deserializeJson(doc, request->arg("body"));
-    uint8_t id = doc["id"], red = doc["r"], green = doc["g"], blue = doc["b"];
+
+  AsyncCallbackJsonWebHandler* changeColorHandler = new AsyncCallbackJsonWebHandler("/changeColor", [&](AsyncWebServerRequest *request, JsonVariant &json) {
+    StaticJsonDocument<200> data = json.as<JsonObject>();
+    uint8_t id = data["id"], red = data["r"], green = data["g"], blue = data["b"];
     if(ledStrips.find(id) != ledStrips.end()) {
         uint8_t colors[] = {red, green, blue};
         EEPROMManager::writeBytes(SAVED_COLORS_LED_STRIPS_ADDRESS + (id * 3), colors, SIZEOF(colors));
@@ -101,6 +101,7 @@ void LedStripWebServer::initEndpoints() {
         request->send(404, "text/plain", "404: Not Found");
     }
   });
+  server->addHandler(changeColorHandler);
 
   server->on("/reset", HTTP_GET, [] (AsyncWebServerRequest *request) {
     request->redirect("/");
@@ -116,6 +117,9 @@ LedStripWebServer::LedStripWebServer() {
 
 void LedStripWebServer::begin() {
     LittleFS.begin();
+    DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
+      DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", " GET, POST, OPTIONS, PUT, DELETE");
+  DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "Content-Type");
     server = new AsyncWebServer(80);
     initEndpoints();
     server->serveStatic("/", LittleFS, "/");

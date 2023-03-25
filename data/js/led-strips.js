@@ -15,14 +15,17 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         }
         xmlHttp.open(method, url, true); // true for asynchronous 
-        xmlHttp.send(body);
+        if(body) {
+            let json = JSON.stringify(body);
+            xmlHttp.setRequestHeader("Content-Type", "application/json");
+            xmlHttp.send(json);
+        } else xmlHttp.send();
     }
-
 
     function onColorChange(id, colorRGB) {
         let data = colorRGB;
         data['id'] = Number(id);
-        httpRequest(host + '/changeColor', 'POST', null, JSON.stringify(data));
+        httpRequest(host + '/changeColor', 'POST', null, data);
     }
 
     function createTableHeader(id) {
