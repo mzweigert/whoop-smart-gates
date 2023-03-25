@@ -50,7 +50,8 @@ void PersWiFiManager::handleWiFi() {
   }
 
   //if failed or no saved SSID or no WiFi credentials were found or not connected and time is up
-  if ((WiFi.status() == WL_CONNECT_FAILED) || _freshConnectionAttempt || ((WiFi.status() != WL_CONNECTED) && ((millis() - _connectStartTime) > (1000 * WIFI_CONNECT_TIMEOUT)))) {
+  if ((WiFi.status() == WL_CONNECT_FAILED) || _freshConnectionAttempt || 
+      ((WiFi.status() != WL_CONNECTED) && ((millis() - _connectStartTime) > (1000 * WIFI_CONNECT_TIMEOUT)))) {
     startApMode();
     _connectStartTime = 0; //reset connect start time
     _freshConnectionAttempt = false;

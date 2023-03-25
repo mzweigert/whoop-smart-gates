@@ -32,9 +32,9 @@ WiFiConnector::WiFiConnector() {
   persWM->onConnect([&]() {
     DEBUG_PRINT("wifi connected");
     DEBUG_PRINT(WiFi.localIP());
-    EEPROMManager::writeString(SSID_ADDRESS, WiFi.SSID());
-    EEPROMManager::writeString(PASS_ADDRESS, WiFi.psk());
     if(_status == IN_AP_MODE) {
+      EEPROMManager::writeString(SSID_ADDRESS, WiFi.SSID());
+      EEPROMManager::writeString(PASS_ADDRESS, WiFi.psk());
       DEBUG_PRINT("Restarting...");
       DeviceReset::reset();
     }
