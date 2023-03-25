@@ -43,7 +43,6 @@ bool PersWiFiManager::attemptConnection(const String& ssid, const String& pass) 
 void PersWiFiManager::handleWiFi() {
   if (!_connectStartTime) return;
 
-  Serial.println(WiFi.status());
   if (WiFi.status() == WL_CONNECTED) {
     _connectStartTime = 0;
     if (_connectHandler) _connectHandler();
