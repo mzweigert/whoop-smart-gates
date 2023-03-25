@@ -105,8 +105,7 @@ void LedStripWebServer::initEndpoints() {
 
   server->on("/reset", HTTP_GET, [] (AsyncWebServerRequest *request) {
     request->redirect("/");
-    pinMode(WAKE_UP, OUTPUT);
-    digitalWrite(WAKE_UP, LOW);
+    DeviceReset::reset();
   });
 }
 

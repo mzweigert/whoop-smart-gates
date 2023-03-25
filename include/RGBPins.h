@@ -6,8 +6,6 @@
 #define TX 1
 #endif
 
-#define WAKE_UP 16
-
 #define FIRST_RED 15
 #define FIRST_GREEN 13
 #define FIRST_BLUE 2

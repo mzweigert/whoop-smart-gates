@@ -7,6 +7,7 @@
 
 #include <PersWiFiManager.h>
 #include <EEPROMManager.h>
+#include <DeviceReset.h>
 
 #define DEBUG_PRINT(x) Serial.println(x)
 #define DEVICE_NAME "ESP8266 DEVICE"
