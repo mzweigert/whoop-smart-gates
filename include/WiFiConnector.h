@@ -24,6 +24,7 @@ class WiFiConnector {
   PersWiFiManager *persWM;
   String ssid, password;
   conn_status _status;
+  bool _apModeStarted; // needed to save credentials and reset device due to servers overlaping
   
  public:
   conn_status status();

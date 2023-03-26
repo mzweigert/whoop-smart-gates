@@ -9,6 +9,8 @@
 
 #define WIFI_CONNECT_TIMEOUT 30
 
+#define CONNECTION_RETRIES 3
+
 class PersWiFiManager {
 
  public:
@@ -18,23 +20,17 @@ class PersWiFiManager {
 
   bool attemptConnection(const String& ssid = "", const String& pass = "");
 
-  void setupWiFiHandlers();
-
-  void begin();
-
-  String getApSsid();
-
-  void setApCredentials(const String& apSsid, const String& apPass = "");
-
   void setConnectNonBlock(bool b);
 
   void handleWiFi();
 
-  void startApMode();
-
   void onConnect(WiFiChangeHandlerFunction fn);
 
+  void onAttemptConnection(WiFiChangeHandlerFunction fn);
+  
   void onAp(WiFiChangeHandlerFunction fn);
+
+  void begin();
 
   void loopServers();
 
@@ -43,6 +39,14 @@ class PersWiFiManager {
   bool isRunning();
 
  private:
+
+  void setupWiFiHandlers();
+  void startApMode();
+  void setApCredentials(const String& apSsid, const String& apPass = "");
+  bool isConnectionTimeoutReached();
+  bool startConnection(const String& ssid, const String& pass);
+  String getApSsid();
+
   AsyncWebServer* _server;
   DNSServer* _dnsServer;
   String _apSsid, _apPass;
@@ -50,9 +54,11 @@ class PersWiFiManager {
   
   bool _connectNonBlock;
   unsigned long _connectStartTime;
+  uint8_t _retries;
   bool _freshConnectionAttempt;
 
   WiFiChangeHandlerFunction _connectHandler;
+  WiFiChangeHandlerFunction _attemptConnectionHandler;
   WiFiChangeHandlerFunction _apHandler;
 
 };  //class

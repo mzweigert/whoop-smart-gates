@@ -111,17 +111,17 @@ void LedStripWebServer::initEndpoints() {
 
 LedStripWebServer::LedStripWebServer() {
     ledStrips = initLedStrips();
+    // DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
+    // DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", " GET, POST, OPTIONS, PUT, DELETE");
+    // DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "Content-Type");
+    server = new AsyncWebServer(80);
+    initEndpoints();
+    server->serveStatic("/", LittleFS, "/");
     _isRunning = false;
 }
 
 void LedStripWebServer::begin() {
     LittleFS.begin();
-    DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
-      DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", " GET, POST, OPTIONS, PUT, DELETE");
-  DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "Content-Type");
-    server = new AsyncWebServer(80);
-    initEndpoints();
-    server->serveStatic("/", LittleFS, "/");
     server->begin();
     _isRunning = true;
 }

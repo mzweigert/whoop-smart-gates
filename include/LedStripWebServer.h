@@ -22,7 +22,6 @@ private:
     void saveToEEPROM(uint8_t id);
 public:
     void begin();
-    void loop();
     void stop();
 
     bool isRunning();

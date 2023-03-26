@@ -4,35 +4,39 @@ conn_status WiFiConnector::status() {
   return _status;
 }
 
-void WiFiConnector::stop() {
-  persWM->stopServers();
-}
-
-bool WiFiConnector::canStopAPMode() {
-  return persWM->isRunning();
-}
-
 void WiFiConnector::loop() {
-    if(_status == INITIALIZING || !persWM->isRunning()) {
-        persWM->begin();
+    if(_status == INITIALIZING) {
         persWM->attemptConnection(ssid, password);
-        _status = CONNECTING;
-    } 
-    
-    persWM->handleWiFi();
-    persWM->loopServers();
+    } else if (_status == CONNECTING){
+          persWM->handleWiFi();
+    } else if (_status == IN_AP_MODE){
+      if(!persWM->isRunning()) {
+        persWM->begin();
+      }
+      persWM->loopServers();
+    } else {
+      _status = INITIALIZING;
+    }
 }
 
 WiFiConnector::WiFiConnector() {
-  this->persWM = new PersWiFiManager();
-  this->ssid =  EEPROMManager::readString(SSID_ADDRESS, 32);
-  this->password = EEPROMManager::readString(PASS_ADDRESS, 64);
+  ssid =  EEPROMManager::readString(SSID_ADDRESS, 32);
+  password = EEPROMManager::readString(PASS_ADDRESS, 64);
 
+  _status = INITIALIZING;
+  _apModeStarted = false;
+
+  persWM = new PersWiFiManager();
   persWM->setConnectNonBlock(true);
+  persWM->onAttemptConnection([&]() {
+    DEBUG_PRINT("Connecting...");
+    _status = CONNECTING;
+  });
   persWM->onConnect([&]() {
     DEBUG_PRINT("wifi connected");
     DEBUG_PRINT(WiFi.localIP());
-    if(_status == IN_AP_MODE) {
+    if(_apModeStarted) {
+      persWM->stopServers();
       EEPROMManager::writeString(SSID_ADDRESS, WiFi.SSID());
       EEPROMManager::writeString(PASS_ADDRESS, WiFi.psk());
       DEBUG_PRINT("Restarting...");
@@ -40,13 +44,13 @@ WiFiConnector::WiFiConnector() {
     }
     _status = CONNECTED;
   });
-  //...or AP mode is started
+
   persWM->onAp([&]() {
     DEBUG_PRINT("AP MODE Initialized!");
     DEBUG_PRINT(DEVICE_NAME);
     _status = IN_AP_MODE;
+    _apModeStarted = true;
     EEPROMManager::clear(SSID_ADDRESS, PASS_ADDRESS - 1);
     EEPROMManager::clear(PASS_ADDRESS, EEPROM_SIZE - 1);
   });
-  _status = INITIALIZING;
 }

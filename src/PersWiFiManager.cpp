@@ -9,28 +9,21 @@ PersWiFiManager::PersWiFiManager() {
   _server = new AsyncWebServer(80);
   _dnsServer = new DNSServer();
   _apPass = "";
-  _isRunning = false;
 }  //PersWiFiManager
 
 bool PersWiFiManager::attemptConnection(const String& ssid, const String& pass) {
   //attempt to connect to wifi
+  if (_attemptConnectionHandler) _attemptConnectionHandler();
+
   WiFi.mode(WIFI_STA);
-  if (ssid.length()) {
-    WiFi.disconnect(); // To avoid issues (experience from WiFiManager)
-    if (pass.length()) WiFi.begin(ssid.c_str(), pass.c_str());
-    else WiFi.begin(ssid.c_str());
-  } else {
-    if((WiFi.SSID() == "") && (WiFi.status() != WL_CONNECTED)) { // No saved credentials, so skip trying to connect
-      _connectStartTime = millis();
-      _freshConnectionAttempt = true;
-      return false;
-    } else {
-      WiFi.begin();
-    }
+  bool connectionStarted = startConnection(ssid, pass);
+  if(!connectionStarted) {
+    return connectionStarted;
   }
 
   //if in nonblock mode, skip this loop
   _connectStartTime = millis();// + 1;
+  _retries = 0;
   while (!_connectNonBlock && _connectStartTime) {
     handleWiFi();
     delay(10);
@@ -40,24 +33,43 @@ bool PersWiFiManager::attemptConnection(const String& ssid, const String& pass) 
 
 } //attemptConnection
 
+
 void PersWiFiManager::handleWiFi() {
   if (!_connectStartTime) return;
 
   if (WiFi.status() == WL_CONNECTED) {
-    _connectStartTime = 0;
+    _connectStartTime = _retries = 0;
     if (_connectHandler) _connectHandler();
-    return;
-  }
-
-  //if failed or no saved SSID or no WiFi credentials were found or not connected and time is up
-  if ((WiFi.status() == WL_CONNECT_FAILED) || _freshConnectionAttempt || 
-      ((WiFi.status() != WL_CONNECTED) && ((millis() - _connectStartTime) > (1000 * WIFI_CONNECT_TIMEOUT)))) {
+  } else if (_freshConnectionAttempt || _retries >= CONNECTION_RETRIES){
     startApMode();
     _connectStartTime = 0; //reset connect start time
     _freshConnectionAttempt = false;
+  } else if(isConnectionTimeoutReached() && startConnection(WiFi.SSID(), WiFi.psk())) {
+      _connectStartTime = millis();
+      Serial.println("Try " + String(_retries) + " connection failed!");
+      _retries++;
   }
-
 } //handleWiFi
+
+bool PersWiFiManager::startConnection(const String& ssid, const String& pass) {
+  if (ssid.length()) {
+    WiFi.disconnect(); // To avoid issues (experience from WiFiManager)
+    if (pass.length()) WiFi.begin(ssid.c_str(), pass.c_str());
+    else WiFi.begin(ssid.c_str());
+  } else if((WiFi.SSID() == "") && (WiFi.status() != WL_CONNECTED)){
+     // No saved credentials, so skip trying to connect
+      _connectStartTime = millis();
+      _freshConnectionAttempt = true;
+      return false;
+  } else {
+      WiFi.begin();
+  }
+  return true;
+}
+
+bool PersWiFiManager::isConnectionTimeoutReached() {
+  return (millis() - _connectStartTime) > (1000 * WIFI_CONNECT_TIMEOUT);
+}
 
 void PersWiFiManager::startApMode() {
   //start AP mode
@@ -66,6 +78,7 @@ void PersWiFiManager::startApMode() {
   WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
   _apPass.length() ? WiFi.softAP(getApSsid().c_str(), _apPass.c_str()) : WiFi.softAP(getApSsid().c_str());
   if (_apHandler) _apHandler();
+
 }  //startApMode
 
 void PersWiFiManager::setConnectNonBlock(bool b) {
@@ -173,4 +186,8 @@ void PersWiFiManager::onConnect(WiFiChangeHandlerFunction fn) {
 
 void PersWiFiManager::onAp(WiFiChangeHandlerFunction fn) {
   _apHandler = fn;
+}
+
+void PersWiFiManager::onAttemptConnection(WiFiChangeHandlerFunction fn) {
+  _attemptConnectionHandler = fn;
 }
