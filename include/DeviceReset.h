@@ -8,7 +8,7 @@
 #define WAKE_UP 16
 
 class DeviceReset {
- public:
+public:
     static void reset();
 };
 
