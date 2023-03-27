@@ -14,7 +14,8 @@ void setup() {
   delay(10000);
   EEPROMManager::init();
   wiFiConnector = new WiFiConnector();
-  ledStripWebServer = new LedStripWebServer();;
+  ledStripWebServer = new LedStripWebServer();
+  wdt_disable();
 }
 
 void loop() {
@@ -30,4 +31,5 @@ void loop() {
         ledStripWebServer->begin();
       }
    }
+   wdt_reset();
 }
