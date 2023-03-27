@@ -29,25 +29,25 @@ WiFiConnector::WiFiConnector() {
   persWM = new PersWiFiManager();
   persWM->setConnectNonBlock(true);
   persWM->onAttemptConnection([&]() {
-    DEBUG_PRINT("Connecting...");
+    Serial.println("Connecting...");
     _status = CONNECTING;
   });
   persWM->onConnect([&]() {
-    DEBUG_PRINT("wifi connected");
-    DEBUG_PRINT(WiFi.localIP());
+    Serial.println("wifi connected");
+    Serial.println(WiFi.localIP());
     if(_apModeStarted) {
       persWM->stopServers();
       EEPROMManager::writeString(SSID_ADDRESS, WiFi.SSID());
       EEPROMManager::writeString(PASS_ADDRESS, WiFi.psk());
-      DEBUG_PRINT("Restarting...");
+      Serial.println("Restarting...");
       DeviceReset::reset();
     }
     _status = CONNECTED;
   });
 
   persWM->onAp([&]() {
-    DEBUG_PRINT("AP MODE Initialized!");
-    DEBUG_PRINT(DEVICE_NAME);
+    Serial.println("AP MODE Initialized!");
+    Serial.println(persWM->getApSsid());
     _status = IN_AP_MODE;
     _apModeStarted = true;
     EEPROMManager::clear(SSID_ADDRESS, PASS_ADDRESS - 1);

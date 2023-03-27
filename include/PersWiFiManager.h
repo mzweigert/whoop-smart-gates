@@ -38,6 +38,8 @@ class PersWiFiManager {
 
   bool isRunning();
 
+  String getApSsid();
+
  private:
 
   void setupWiFiHandlers();
@@ -45,7 +47,6 @@ class PersWiFiManager {
   void setApCredentials(const String& apSsid, const String& apPass = "");
   bool isConnectionTimeoutReached();
   bool startConnection(const String& ssid, const String& pass);
-  String getApSsid();
 
   AsyncWebServer* _server;
   DNSServer* _dnsServer;

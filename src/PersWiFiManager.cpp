@@ -17,7 +17,7 @@ bool PersWiFiManager::attemptConnection(const String& ssid, const String& pass) 
 
   WiFi.mode(WIFI_STA);
   bool connectionStarted = startConnection(ssid, pass);
-  if(!connectionStarted) {
+  if (!connectionStarted) {
     return connectionStarted;
   }
 
@@ -40,14 +40,14 @@ void PersWiFiManager::handleWiFi() {
   if (WiFi.status() == WL_CONNECTED) {
     _connectStartTime = _retries = 0;
     if (_connectHandler) _connectHandler();
-  } else if (_freshConnectionAttempt || _retries >= CONNECTION_RETRIES){
+  } else if (_freshConnectionAttempt || _retries >= CONNECTION_RETRIES) {
     startApMode();
     _connectStartTime = 0; //reset connect start time
     _freshConnectionAttempt = false;
-  } else if(isConnectionTimeoutReached() && startConnection(WiFi.SSID(), WiFi.psk())) {
-      _connectStartTime = millis();
-      Serial.println("Try " + String(_retries) + " connection failed!");
-      _retries++;
+  } else if (isConnectionTimeoutReached() && startConnection(WiFi.SSID(), WiFi.psk())) {
+    _connectStartTime = millis();
+    Serial.println("Try " + String(_retries) + " connection failed!");
+    _retries++;
   }
 } //handleWiFi
 
@@ -56,13 +56,13 @@ bool PersWiFiManager::startConnection(const String& ssid, const String& pass) {
     WiFi.disconnect(); // To avoid issues (experience from WiFiManager)
     if (pass.length()) WiFi.begin(ssid.c_str(), pass.c_str());
     else WiFi.begin(ssid.c_str());
-  } else if((WiFi.SSID() == "") && (WiFi.status() != WL_CONNECTED)){
-     // No saved credentials, so skip trying to connect
-      _connectStartTime = millis();
-      _freshConnectionAttempt = true;
-      return false;
+  } else if ((WiFi.SSID() == "") && (WiFi.status() != WL_CONNECTED)) {
+    // No saved credentials, so skip trying to connect
+    _connectStartTime = millis();
+    _freshConnectionAttempt = true;
+    return false;
   } else {
-      WiFi.begin();
+    WiFi.begin();
   }
   return true;
 }
@@ -90,7 +90,7 @@ void PersWiFiManager::setupWiFiHandlers() {
   _dnsServer->setErrorReplyCode(DNSReplyCode::NoError);
   _dnsServer->start((byte)53, "*", apIP);  //used for captive portal in AP mode
 
-  _server->on("/wifi/list", [&](AsyncWebServerRequest *request) {
+  _server->on("/wifi/list", [&](AsyncWebServerRequest* request) {
     //scan for wifi networks
     int n = WiFi.scanNetworks();
 
@@ -106,7 +106,7 @@ void PersWiFiManager::setupWiFiHandlers() {
     for (int i = 0; i < n; i++)
       for (int j = i + 1; j < n; j++)
         if (WiFi.SSID(ix[i]).equals(WiFi.SSID(ix[j])) &&
-            WiFi.encryptionType(ix[i]) == WiFi.encryptionType(ix[j])) ix[j] = -1;
+          WiFi.encryptionType(ix[i]) == WiFi.encryptionType(ix[j])) ix[j] = -1;
 
     //build plain text string of wifi info
     //format [signal%]:[encrypted 0 or 1]:SSID
@@ -115,26 +115,26 @@ void PersWiFiManager::setupWiFiHandlers() {
     for (int i = 0; i < n && s.length() < 2000; i++) {  //check s.length to limit memory usage
       if (ix[i] != -1) {
         s += String(i ? "\n" : "") + ((constrain(WiFi.RSSI(ix[i]), -100, -50) + 100) * 2) + "," +
-             ((WiFi.encryptionType(ix[i]) == ENC_TYPE_NONE) ? 0 : 1) + "," + WiFi.SSID(ix[i]);
+          ((WiFi.encryptionType(ix[i]) == ENC_TYPE_NONE) ? 0 : 1) + "," + WiFi.SSID(ix[i]);
       }
     }
 
     //send string to client
     request->send(200, "text/plain", s);
-  });  //_server->on /wifi/list
+    });  //_server->on /wifi/list
 
-  _server->on("/wifi/connect", HTTP_POST, [&](AsyncWebServerRequest *request) {
+  _server->on("/wifi/connect", HTTP_POST, [&](AsyncWebServerRequest* request) {
     String ssid = request->arg("n"), pass = request->arg("p");
     attemptConnection(ssid, pass);
     request->send(200, "text/html", "connecting...");
-  });  //_server->on /wifi/connect
+    });  //_server->on /wifi/connect
 
-  _server->on("/wifi/ap", [&](AsyncWebServerRequest *request) {
+  _server->on("/wifi/ap", [&](AsyncWebServerRequest* request) {
     request->send(200, "text/html", "access point: " + getApSsid());
     startApMode();
-  });  //_server->on /wifi/ap
+    });  //_server->on /wifi/ap
 
-  _server->on("/wifi/rst", [&](AsyncWebServerRequest *request) {
+  _server->on("/wifi/rst", [&](AsyncWebServerRequest* request) {
     request->send(200, "text/html", "Rebooting...");
     delay(100);
     //ESP.restart();
@@ -142,11 +142,11 @@ void PersWiFiManager::setupWiFiHandlers() {
     ESP.wdtDisable();
     ESP.reset();
     delay(2000);
-  });
+    });
 
-  _server->on("/", HTTP_GET, [&](AsyncWebServerRequest *request) {
+  _server->on("/", HTTP_GET, [&](AsyncWebServerRequest* request) {
     request->send(LittleFS, "/wifi.html", "text/html");
-  });
+    });
 }  //setupWiFiHandlers
 
 void PersWiFiManager::begin() {
@@ -156,13 +156,13 @@ void PersWiFiManager::begin() {
   _isRunning = true;
 }  //begin
 
-void PersWiFiManager::loopServers(){
-    _dnsServer->processNextRequest();
+void PersWiFiManager::loopServers() {
+  _dnsServer->processNextRequest();
 }
 
 void PersWiFiManager::stopServers() {
-   LittleFS.end();
-   _dnsServer->stop();
+  LittleFS.end();
+  _dnsServer->stop();
   _server->end();
   _isRunning = false;
 }
@@ -172,7 +172,10 @@ bool PersWiFiManager::isRunning() {
 }
 
 String PersWiFiManager::getApSsid() {
-  return _apSsid.length() ? _apSsid : "ESP8266";
+  if (!_apSsid.length()) {
+    _apSsid = "ESP8266-AP-" + String(random());
+  } 
+  return _apSsid;
 }  //getApSsid
 
 void PersWiFiManager::setApCredentials(const String& apSsid, const String& apPass) {
