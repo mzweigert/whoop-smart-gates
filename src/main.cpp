@@ -11,10 +11,9 @@ LedStripWebServer* ledStripWebServer;
 void setup() {
   Serial.begin(115200);
   while (! Serial); 
-  delay(10000);
   EEPROMManager::init();
   ledStripsManager = new LedStripsManager();
-  wiFiConnector = new WiFiConnector();
+  wiFiConnector = new WiFiConnector(ledStripsManager);
   ledStripWebServer = new LedStripWebServer(ledStripsManager);
   wdt_disable();
 }

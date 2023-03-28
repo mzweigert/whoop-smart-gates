@@ -6,6 +6,7 @@
 #include <FS.h>
 
 #include <PersWiFiManager.h>
+#include <LedStripsManager.h>
 #include <EEPROMManager.h>
 #include <DeviceReset.h>
 
@@ -19,6 +20,7 @@ typedef enum {
 class WiFiConnector {
  private:
   PersWiFiManager *persWM;
+  LedStripsManager* ledStripsManager;
   String ssid, password;
   conn_status _status;
   bool _apModeStarted; // needed to save credentials and reset device due to servers overlaping
@@ -31,7 +33,7 @@ class WiFiConnector {
 
   bool canStopAPMode();
 
-  WiFiConnector();
+  WiFiConnector(LedStripsManager* ledStripsManager);
 
 };
 

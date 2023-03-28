@@ -22,41 +22,41 @@ document.addEventListener("DOMContentLoaded", function() {
         } else xmlHttp.send();
     }
 
-    function onColorChange(id, colorRGB) {
+    function onColorChange(order, colorRGB) {
         let data = colorRGB;
-        data['id'] = id;
+        data['order'] = Number(order);
         httpRequest(host + '/changeColor', 'POST', null, data);
     }
 
-    function createTableHeader(id) {
+    function createTableHeader(order) {
         let $th = document.createElement('th');
             $th.setAttribute('scope', 'col');
             $th.classList.add('text-center');
-            $th.appendChild(document.createTextNode('Gate id: ' + id ));
+            $th.appendChild(document.createTextNode('Gate order: ' + order ));
         return $th;
     }
-    function createTableData(id, savedColors) {
+    function createTableData(order, savedColors) {
         let $td = document.createElement('td'), 
             $container = document.createElement('div'); 
             $container.style.display = 'flex' ;
             $container.style.justifyContent = 'center';
-            let colors = savedColors.filter(obj => obj.id == id);
+            let colors = savedColors.filter(obj => obj.order == order);
             new iro.ColorPicker($container, { colors: colors })
-                .on('input:end', function (color) { onColorChange(id, color.rgb); });
+                .on('input:end', function (color) { onColorChange(order, color.rgb); });
             $td.appendChild($container);
         return $td;
     }
 
-    function createGUIforMobile(ids, savedColors) {
+    function createGUIforMobile(orders, savedColors) {
         let $colorPickersContainer = document.getElementById('color-pickers-container');
-        for (let id of ids) {
+        for (let order of orders) {
             let $table = document.createElement('table'), 
             $thead = document.createElement("thead"), 
             $tbody = document.createElement("tbody"),
             $tr = document.createElement("tr");
-            let $th = createTableHeader(id);
+            let $th = createTableHeader(order);
             $thead.appendChild($th);
-            let $td = createTableData(id, savedColors);
+            let $td = createTableData(order, savedColors);
             $tr.appendChild($td);
             $tbody.appendChild($tr)
             $table.appendChild($thead);
@@ -66,15 +66,15 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
-    function createGUIforDesktop(ids, savedColors) {
+    function createGUIforDesktop(orders, savedColors) {
         let $table = document.createElement('table'), 
             $thead = document.createElement("thead"), 
             $tbody = document.createElement("tbody"),
             $tr    = document.createElement("tr");
-        for (let id of ids) {
-            let $th = createTableHeader(id);
+        for (let order of orders) {
+            let $th = createTableHeader(order);
             $thead.appendChild($th);
-            let $td = createTableData(id, savedColors);
+            let $td = createTableData(order, savedColors);
             $tr.appendChild($td);
         }
         $tbody.appendChild($tr);
@@ -104,20 +104,20 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
     
-    function initColorPickers(ids) {
+    function initColorPickers(orders) {
         httpRequest(host + '/getLastStatus', 'GET', function (data) {
             let enabled = data['enabled'];
             initializeToggleBtn(enabled);
             if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-                createGUIforMobile(ids, data['ledStrips']);
+                createGUIforMobile(orders, data['ledStrips']);
             } else {
-                createGUIforDesktop(ids, data['ledStrips']);
+                createGUIforDesktop(orders, data['ledStrips']);
             }
         });
 
     }
-    httpRequest(host + '/getLedStripIds', 'GET', function (data) {
-        initColorPickers(data['ids']);
+    httpRequest(host + '/getLedStripOrders', 'GET', function (data) {
+        initColorPickers(data['orders']);
     });
 
 

@@ -2,6 +2,7 @@
 #define LedStripManager_h
 
 #include <inttypes.h>
+#include <map>
 #include <optional>
 #include <Arduino.h>
 #include <RGBPins.h>
@@ -11,6 +12,9 @@
 #define SIZEOF(arr) sizeof(arr) / sizeof(*arr)
 
 #define LED_STRIPS_NUMBER 3
+
+#define BLINK_MAX_POWER (ON / 4)
+#define BLINK_MS 500
 
 class Colors {
 private:
@@ -28,21 +32,30 @@ public:
 
 class LedStripsManager {
 private:
-    std::array<LedStrip*, LED_STRIPS_NUMBER> ledStrips;
-    std::array<LedStrip*, LED_STRIPS_NUMBER> initPinsMap();
+  std::map<uint8_t, LedStrip*> ledStrips;
+  unsigned long blinkSwitchTime;
+  bool blinkEnable;
+
+  std::map<uint8_t, LedStrip*> initPinsMap();
+
+  void switchBlink(Color color, uint8_t power);
+
+
 
 public:
-    void initColors();
-    bool changeColor(String id, uint8_t red, uint8_t green, uint8_t blue);
-    
-    void enable();
-    void disable();
+  void initColors();
+  bool changeColor(uint8_t order, uint8_t red, uint8_t green, uint8_t blue);
+  void changeColors(uint8_t red, uint8_t green, uint8_t blue);
+  void blink(Color color);
 
-    bool isEnabled();
+  void enable();
+  void disable();
 
-    std::array<String, LED_STRIPS_NUMBER> getLedStripsIds();
-    std::optional<Colors> getSavedColorsForLedStripById(String id);
+  bool isEnabled();
 
-    LedStripsManager();
+  std::array<uint8_t, LED_STRIPS_NUMBER> getLedStripsOrders();
+  std::optional<Colors> getSavedColorsForLedStripByOrder(uint8_t order);
+
+  LedStripsManager();
 };
 #endif

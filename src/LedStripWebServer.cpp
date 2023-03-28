@@ -7,12 +7,12 @@ void LedStripWebServer::initEndpoints() {
     request->send(LittleFS, "/index.html");
   });
 
-  server->on("/getLedStripIds", [&] (AsyncWebServerRequest *request) {
-    String response = "{ \"ids\" : [ ";
-    std::array<String, LED_STRIPS_NUMBER> ids = ledStripsManager->getLedStripsIds();
-    for(int i = 0; i < ids.size(); i++) {
-      response += "\"" + ids[i] + "\"";
-      if(i + 1 < ids.size()) {
+  server->on("/getLedStripOrders", [&] (AsyncWebServerRequest *request) {
+    String response = "{ \"orders\" : [ ";
+    std::array<uint8_t, LED_STRIPS_NUMBER> orders = ledStripsManager->getLedStripsOrders();
+    for(int i = 0; i < orders.size(); i++) {
+      response += orders[i];
+      if(i + 1 < orders.size()) {
         response += ", ";
       }
     }
@@ -24,16 +24,16 @@ void LedStripWebServer::initEndpoints() {
     String response = "{ \"enabled\" : ";
     response += ledStripsManager->isEnabled();
     response += ", \"ledStrips\": [";
-    std::array<String, LED_STRIPS_NUMBER> ids = ledStripsManager->getLedStripsIds();
-    for(int i = 0; i < ids.size(); i++) {
-        auto colors = ledStripsManager->getSavedColorsForLedStripById(ids[i]);
+    std::array<uint8_t, LED_STRIPS_NUMBER> orders = ledStripsManager->getLedStripsOrders();
+    for(int i = 0; i < orders.size(); i++) {
+        auto colors = ledStripsManager->getSavedColorsForLedStripByOrder(orders[i]);
         response += "{";
-        response += " \"id\" : \""; response += ids[i]; response += "\", ";
+        response += " \"order\" : "; response += orders[i]; response += ", ";
         response += "  \"r\" : "; response += colors->getRed(); response += ", ";
         response += "  \"g\" : "; response += colors->getGreen(); response += ", ";
         response += "  \"b\" : "; response += colors->getBlue();
         response += "}";
-        if(i + 1 < ids.size()) {
+        if(i + 1 < orders.size()) {
             response += ", ";
         }
     }
@@ -54,16 +54,20 @@ void LedStripWebServer::initEndpoints() {
 
   AsyncCallbackJsonWebHandler* changeColorHandler = new AsyncCallbackJsonWebHandler("/changeColor", [&](AsyncWebServerRequest *request, JsonVariant &json) {
     StaticJsonDocument<200> data = json.as<JsonObject>();
-    String id = data["id"];
-    uint8_t red = data["r"], green = data["g"], blue = data["b"];
+    uint8_t order = data["order"], red = data["r"], green = data["g"], blue = data["b"];
 
-    if(ledStripsManager->changeColor(id, red, green, blue)) {
+    if(ledStripsManager->changeColor(order, red, green, blue)) {
         request->send(200, "text/plain", "Changed!");
     } else {
         request->send(404, "text/plain", "404: Not Found");
     }
   });
   server->addHandler(changeColorHandler);
+
+  server->on("/disconnect", HTTP_GET, [] (AsyncWebServerRequest *request) {
+    request->redirect("/");
+    WiFi.disconnect();
+  });
 
   server->on("/reset", HTTP_GET, [] (AsyncWebServerRequest *request) {
     request->redirect("/");
@@ -77,7 +81,7 @@ LedStripWebServer::LedStripWebServer(LedStripsManager* ledStripsManager) {
     // DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", " GET, POST, OPTIONS, PUT, DELETE");
     // DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "Content-Type");
     this->server = new AsyncWebServer(80);
-    this->ledStripsManager->initColors();
+    
     initEndpoints();
     this->server->serveStatic("/", LittleFS, "/");
     _isRunning = false;
@@ -86,6 +90,7 @@ LedStripWebServer::LedStripWebServer(LedStripsManager* ledStripsManager) {
 void LedStripWebServer::begin() {
     LittleFS.begin();
     server->begin();
+    ledStripsManager->initColors();
     _isRunning = true;
 }
 
