@@ -29,10 +29,15 @@ void LedStrip::disable(){
     rgb(OFF, OFF, OFF);
 }
 
-LedStrip::LedStrip(uint8_t redPin, uint8_t greenPin, uint8_t bluePin) {
+String LedStrip::getId() {
+    return this->id;
+}
+
+LedStrip::LedStrip(String id, uint8_t redPin, uint8_t greenPin, uint8_t bluePin) {
     setPinAsDigitalOutput(redPin);
     setPinAsDigitalOutput(greenPin);
     setPinAsDigitalOutput(bluePin);
+    this->id = id;
     this->redPin = redPin;
     this->greenPin = greenPin;
     this->bluePin = bluePin;

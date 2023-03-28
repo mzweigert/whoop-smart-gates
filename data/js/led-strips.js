@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     function onColorChange(id, colorRGB) {
         let data = colorRGB;
-        data['id'] = Number(id);
+        data['id'] = id;
         httpRequest(host + '/changeColor', 'POST', null, data);
     }
 
@@ -49,7 +49,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     function createGUIforMobile(ids, savedColors) {
         let $colorPickersContainer = document.getElementById('color-pickers-container');
-        for (let id in ids) {
+        for (let id of ids) {
             let $table = document.createElement('table'), 
             $thead = document.createElement("thead"), 
             $tbody = document.createElement("tbody"),
@@ -71,7 +71,7 @@ document.addEventListener("DOMContentLoaded", function() {
             $thead = document.createElement("thead"), 
             $tbody = document.createElement("tbody"),
             $tr    = document.createElement("tr");
-        for (let id in ids) {
+        for (let id of ids) {
             let $th = createTableHeader(id);
             $thead.appendChild($th);
             let $td = createTableData(id, savedColors);

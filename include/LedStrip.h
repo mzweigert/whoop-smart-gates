@@ -6,22 +6,25 @@
 #include <RGBPins.h>
 
 enum Status {
-    ON = 255, OFF = 0
+  ON = 255, OFF = 0
 };
 
 class LedStrip {
- private:
+private:
+  String id;
   uint8_t redPin, greenPin, bluePin;
   void setPinAsDigitalOutput(uint8_t pin);
 
- public:
+public:
   void rgb(uint8_t red, uint8_t green, uint8_t blue);
   uint8_t red();
   uint8_t green();
   uint8_t blue();
   void disable();
 
-  LedStrip(uint8_t redPin, uint8_t greenPin, uint8_t bluePin);
+  String getId();
+
+  LedStrip(String id, uint8_t redPin, uint8_t greenPin, uint8_t bluePin);
 };
 
 #endif
