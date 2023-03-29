@@ -35,26 +35,24 @@ WiFiConnector::WiFiConnector(LedStripsManager* ledStripsManager) {
   persWM->onAttemptConnection([&]() {
     Serial.println("Connecting...");
     _status = CONNECTING;
-    });
+  });
   persWM->onConnect([&]() {
     Serial.println("wifi connected");
     Serial.println(WiFi.localIP());
     if (_apModeStarted) {
       persWM->stopServers();
-      EEPROMManager::writeString(SSID_ADDRESS, WiFi.SSID());
-      EEPROMManager::writeString(PASS_ADDRESS, WiFi.psk());
+      EEPROMManager::writeString(SSID_ADDRESS, PASS_ADDRESS - 1, WiFi.SSID());
+      EEPROMManager::writeString(PASS_ADDRESS, EEPROM_SIZE, WiFi.psk());
       Serial.println("Restarting...");
       DeviceReset::reset();
     }
     _status = CONNECTED;
-    });
+  });
 
   persWM->onAp([&]() {
     Serial.println("AP MODE Initialized!");
     Serial.println(persWM->getApSsid());
     _status = IN_AP_MODE;
     _apModeStarted = true;
-    EEPROMManager::clear(SSID_ADDRESS, PASS_ADDRESS - 1);
-    EEPROMManager::clear(PASS_ADDRESS, EEPROM_SIZE - 1);
-    });
+  });
 }

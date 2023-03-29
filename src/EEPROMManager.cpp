@@ -4,16 +4,18 @@ void EEPROMManager::init() {
     EEPROM.begin(EEPROM_SIZE);
 }
 
-bool EEPROMManager::writeString(int startAddress, String writeString) {
-    for (unsigned int i = 0; i < writeString.length() ; ++i){
-      EEPROM.write(startAddress + i, writeString[i]);
+bool EEPROMManager::writeString(int startAddress, int endAddress, String writeString) {
+    int sizeToWrite = endAddress - startAddress;
+    if (startAddress >= endAddress || writeString.length() > sizeToWrite) {
+      return false;
     }
-    return EEPROM.commit();
-}
-
-bool EEPROMManager::clear(int startAddress, int endAddress) {
-    for (unsigned int i = 0; i < endAddress - startAddress ; ++i){
-      EEPROM.write(startAddress + i, 0);
+    
+    for (unsigned int i = 0; i < sizeToWrite ; ++i){
+      if (i < writeString.length()) {
+         EEPROM.write(startAddress + i, writeString[i]);
+      } else {
+        EEPROM.write(startAddress + i, 0);
+      }
     }
     return EEPROM.commit();
 }
