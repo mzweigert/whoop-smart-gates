@@ -1,20 +1,20 @@
 #include <Arduino.h>
-#include <RGBPins.h>
-#include <LedStrip.h>
 #include <EEPROMManager.h>
+#include <LedStripsManager.h>
 #include <WiFiConnector.h>
 #include <LedStripWebServer.h>
 
+LedStripsManager *ledStripsManager;
 WiFiConnector *wiFiConnector;
-LedStripWebServer* ledStripWebServer ;
+LedStripWebServer* ledStripWebServer;
 
 void setup() {
   Serial.begin(115200);
   while (! Serial); 
-  delay(10000);
   EEPROMManager::init();
-  wiFiConnector = new WiFiConnector();
-  ledStripWebServer = new LedStripWebServer();
+  ledStripsManager = new LedStripsManager();
+  wiFiConnector = new WiFiConnector(ledStripsManager);
+  ledStripWebServer = new LedStripWebServer(ledStripsManager);
   wdt_disable();
 }
 
