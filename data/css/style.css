@@ -270,12 +270,10 @@ input, button, select, textarea {
 .text-nowrap {
   white-space: nowrap;
 }
-
-
-
-
-
-
-/*  */
-
-
+.loader{
+	position: fixed;
+	width: 100%;
+	height: 100vh;
+	background: #21242d url('loader.gif') no-repeat center;
+	z-index: 999;
+}

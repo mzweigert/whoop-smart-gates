@@ -1,62 +1,42 @@
-document.addEventListener("DOMContentLoaded", function() { 
-    let host = '';
-    
-    function httpRequest(url, method, callback = null, body = null) {
-        let xmlHttp = new XMLHttpRequest();
-        xmlHttp.onreadystatechange = function() { 
-            if (xmlHttp.readyState == 4 && xmlHttp.status == 200 && callback) {
-                let responseBody;
-                try {
-                    responseBody = JSON.parse(xmlHttp.response);
-                } catch (e) {
-                    responseBody = xmlHttp.response;
-                }
-                callback(responseBody);
-            }
-        }
-        xmlHttp.open(method, url, true); // true for asynchronous 
-        if(body) {
-            let json = JSON.stringify(body);
-            xmlHttp.setRequestHeader("Content-Type", "application/json");
-            xmlHttp.send(json);
-        } else xmlHttp.send();
-    }
+document.addEventListener("DOMContentLoaded", function () {
 
-    function onColorChange(order, colorRGB) {
-        let data = colorRGB;
-        data['order'] = Number(order);
-        httpRequest(host + '/changeColor', 'POST', null, data);
-    }
+    let loader = document.getElementById('loader');
 
     function createTableHeader(order) {
         let $th = document.createElement('th');
-            $th.setAttribute('scope', 'col');
-            $th.classList.add('text-center');
-            $th.appendChild(document.createTextNode('Gate order: ' + order ));
+        $th.setAttribute('scope', 'col');
+        $th.classList.add('text-center');
+        $th.appendChild(document.createTextNode('Gate order: ' + order));
         return $th;
     }
-    function createTableData(order, savedColors) {
-        let $td = document.createElement('td'), 
-            $container = document.createElement('div'); 
-            $container.style.display = 'flex' ;
-            $container.style.justifyContent = 'center';
-            let colors = savedColors.filter(obj => obj.order == order);
-            new iro.ColorPicker($container, { colors: colors })
-                .on('input:end', function (color) { onColorChange(order, color.rgb); });
-            $td.appendChild($container);
+    
+    function createTableData(ws, savedColors) {
+        let $td = document.createElement('td'),
+            $container = document.createElement('div');
+        $container.style.display = 'flex';
+        $container.style.justifyContent = 'center';
+        new iro.ColorPicker($container, { color: savedColors })
+            .on('input:end', function (color) {
+                let ledStripState = color.rgb;
+                ledStripState['order'] = savedColors['order'];
+                let data = { 'eventType': 'CHANGE_COLOR', 'payload': ledStripState }
+                loader.style.display = 'block';
+                ws.send(JSON.stringify(data));
+            });
+        $td.appendChild($container);
         return $td;
     }
 
-    function createGUIforMobile(orders, savedColors) {
+    function createGUIforMobile(ws, savedColors) {
         let $colorPickersContainer = document.getElementById('color-pickers-container');
-        for (let order of orders) {
-            let $table = document.createElement('table'), 
-            $thead = document.createElement("thead"), 
-            $tbody = document.createElement("tbody"),
-            $tr = document.createElement("tr");
-            let $th = createTableHeader(order);
+        for (let savedColor of savedColors) {
+            let $table = document.createElement('table'),
+                $thead = document.createElement("thead"),
+                $tbody = document.createElement("tbody"),
+                $tr = document.createElement("tr");
+            let $th = createTableHeader(savedColor['order']);
             $thead.appendChild($th);
-            let $td = createTableData(order, savedColors);
+            let $td = createTableData(ws, savedColor);
             $tr.appendChild($td);
             $tbody.appendChild($tr)
             $table.appendChild($thead);
@@ -66,15 +46,15 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
-    function createGUIforDesktop(orders, savedColors) {
-        let $table = document.createElement('table'), 
-            $thead = document.createElement("thead"), 
+    function createGUIforDesktop(ws, savedColors) {
+        let $table = document.createElement('table'),
+            $thead = document.createElement("thead"),
             $tbody = document.createElement("tbody"),
-            $tr    = document.createElement("tr");
-        for (let order of orders) {
-            let $th = createTableHeader(order);
+            $tr = document.createElement("tr");
+        for (let savedColor of savedColors) {
+            let $th = createTableHeader(savedColor['order']);
             $thead.appendChild($th);
-            let $td = createTableData(order, savedColors);
+            let $td = createTableData(ws, savedColor);
             $tr.appendChild($td);
         }
         $tbody.appendChild($tr);
@@ -84,41 +64,60 @@ document.addEventListener("DOMContentLoaded", function() {
         document.getElementById('color-pickers-container').appendChild($table);
     }
 
-    function addStyleToToggleBtn(btn, state) {
+    function addStyleToToggleBtn(state) {
+        let btn = document.getElementById('leds-enabled');
         btn.setAttribute("checked", state)
         btn.className = '';
         btn.classList.add('btn');
         btn.classList.add(state ? 'btn-success' : 'btn-danger');
         btn.innerText = state ? 'Enabled' : 'Disabled';
+        return btn;
     }
 
-    function initializeToggleBtn(enabled) {
-        let btn = document.getElementById('leds-enabled');
-        addStyleToToggleBtn(btn, enabled > 0);
-        btn.addEventListener("click", function() {
+    function initializeToggleBtn(ws, enabled) {
+        let btn = addStyleToToggleBtn(enabled > 0);
+        btn.addEventListener("click", function () {
             let checked = this.getAttribute("checked") == 'true';
-            let endpoint = checked ? '/disable' : '/enable';
-            httpRequest(host + endpoint, 'POST', () => {
-                addStyleToToggleBtn(btn, !checked);
-            });
+            loader.style.display = 'block';
+            ws.send(JSON.stringify({ eventType: "SWITCH_ON_OFF", payload: !checked }));
+            addStyleToToggleBtn(!checked);
         });
     }
-    
-    function initColorPickers(orders) {
-        httpRequest(host + '/getLastStatus', 'GET', function (data) {
-            let enabled = data['enabled'];
-            initializeToggleBtn(enabled);
-            if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-                createGUIforMobile(orders, data['ledStrips']);
-            } else {
-                createGUIforDesktop(orders, data['ledStrips']);
+
+    function initialize(ws, state) {
+        let enabled = state['enabled'];
+        initializeToggleBtn(ws, enabled);
+        if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+            createGUIforMobile(ws, state['ledStrips']);
+        } else {
+            createGUIforDesktop(ws, state['ledStrips']);
+        }
+    }
+
+    (function startSocket() {
+        let ws = new WebSocket('ws://' + document.location.host + '/led-strips-ws', ['arduino']);
+        ws.onopen = function (e) {
+            console.log(e);
+            ws.send(JSON.stringify({ eventType: "INITIALIZE" }))
+        };
+        ws.onclose = function (e) {
+            console.log("Disconnected");
+        };
+        ws.onerror = function (e) {
+            console.log("ws error", e);
+            console.log("Error");
+        };
+        ws.onmessage = function (e) {
+            data = JSON.parse(e.data);
+            if (data.eventType == "INITIALIZE") {
+                initialize(ws, data['payload'])
+                loader.style.display = 'none';
+            } else if (data.eventType == "CHANGE_COLOR") {
+                loader.style.display = 'none';
+            } else if (data.eventType == "SWITCH_ON_OFF") {
+                loader.style.display = 'none';
             }
-        });
-
-    }
-    httpRequest(host + '/getLedStripOrders', 'GET', function (data) {
-        initColorPickers(data['orders']);
-    });
-
-
+        };
+        return ws;
+    })();
 });
