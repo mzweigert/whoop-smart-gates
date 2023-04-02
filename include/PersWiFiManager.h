@@ -6,6 +6,8 @@
 #include <ESPAsyncWebServer.h>
 #include <LittleFS.h>
 
+#define AP_MODE_IP IPAddress(192, 168, 1, 1)
+#define SUBNET IPAddress(255, 255, 255, 0)
 
 #define WIFI_CONNECT_TIMEOUT 30
 
@@ -18,7 +20,7 @@ class PersWiFiManager {
 
   PersWiFiManager();
 
-  bool attemptConnection(const String& ssid = "", const String& pass = "");
+  bool attemptConnection(const String& ssid, const String& pass);
 
   void setConnectNonBlock(bool b);
 
@@ -27,7 +29,7 @@ class PersWiFiManager {
   void onConnect(WiFiChangeHandlerFunction fn);
 
   void onAttemptConnection(WiFiChangeHandlerFunction fn);
-  
+
   void onAp(WiFiChangeHandlerFunction fn);
 
   void begin();
@@ -41,7 +43,6 @@ class PersWiFiManager {
   String getApSsid();
 
  private:
-
   void setupWiFiHandlers();
   void startApMode();
   void setApCredentials(const String& apSsid, const String& apPass = "");
@@ -52,7 +53,7 @@ class PersWiFiManager {
   DNSServer* _dnsServer;
   String _apSsid, _apPass;
   bool _isRunning;
-  
+
   bool _connectNonBlock;
   unsigned long _connectStartTime;
   uint8_t _retries;
@@ -62,6 +63,6 @@ class PersWiFiManager {
   WiFiChangeHandlerFunction _attemptConnectionHandler;
   WiFiChangeHandlerFunction _apHandler;
 
-};  //class
+};  // class
 
 #endif

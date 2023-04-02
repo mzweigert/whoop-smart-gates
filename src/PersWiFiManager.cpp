@@ -9,20 +9,21 @@ PersWiFiManager::PersWiFiManager() {
   _server = new AsyncWebServer(80);
   _dnsServer = new DNSServer();
   _apPass = "";
-}  //PersWiFiManager
+  _freshConnectionAttempt = false;
+  _isRunning = false;
+}  // PersWiFiManager
 
 bool PersWiFiManager::attemptConnection(const String& ssid, const String& pass) {
-  //attempt to connect to wifi
+  // attempt to connect to wifi
   if (_attemptConnectionHandler) _attemptConnectionHandler();
 
-  WiFi.mode(WIFI_STA);
   bool connectionStarted = startConnection(ssid, pass);
   if (!connectionStarted) {
     return connectionStarted;
   }
 
-  //if in nonblock mode, skip this loop
-  _connectStartTime = millis();// + 1;
+  // if in nonblock mode, skip this loop
+  _connectStartTime = millis();  // + 1;
   _retries = 0;
   while (!_connectNonBlock && _connectStartTime) {
     handleWiFi();
@@ -31,8 +32,7 @@ bool PersWiFiManager::attemptConnection(const String& ssid, const String& pass) 
 
   return (WiFi.status() == WL_CONNECTED);
 
-} //attemptConnection
-
+}  // attemptConnection
 
 void PersWiFiManager::handleWiFi() {
   if (!_connectStartTime) return;
@@ -42,20 +42,24 @@ void PersWiFiManager::handleWiFi() {
     if (_connectHandler) _connectHandler();
   } else if (_freshConnectionAttempt || _retries >= CONNECTION_RETRIES) {
     startApMode();
-    _connectStartTime = 0; //reset connect start time
+    _connectStartTime = 0;  // reset connect start time
     _freshConnectionAttempt = false;
-  } else if (isConnectionTimeoutReached() && startConnection(WiFi.SSID(), WiFi.psk())) {
+  } else if (isConnectionTimeoutReached() &&
+             startConnection(WiFi.SSID(), WiFi.psk())) {
     _connectStartTime = millis();
     Serial.println("Try " + String(_retries) + " connection failed!");
     _retries++;
   }
-} //handleWiFi
+}  // handleWiFi
 
 bool PersWiFiManager::startConnection(const String& ssid, const String& pass) {
+  WiFi.mode(WIFI_STA);
   if (ssid.length()) {
-    WiFi.disconnect(); // To avoid issues (experience from WiFiManager)
-    if (pass.length()) WiFi.begin(ssid.c_str(), pass.c_str());
-    else WiFi.begin(ssid.c_str());
+    WiFi.disconnect();  // To avoid issues (experience from WiFiManager)
+    if (pass.length())
+      WiFi.begin(ssid.c_str(), pass.c_str());
+    else
+      WiFi.begin(ssid.c_str());
   } else if ((WiFi.SSID() == "") && (WiFi.status() != WL_CONNECTED)) {
     // No saved credentials, so skip trying to connect
     _connectStartTime = millis();
@@ -72,89 +76,86 @@ bool PersWiFiManager::isConnectionTimeoutReached() {
 }
 
 void PersWiFiManager::startApMode() {
-  //start AP mode
-  IPAddress apIP(192, 168, 1, 1);
+  // start AP mode
   WiFi.mode(WIFI_AP);
-  WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
+  WiFi.softAPConfig(AP_MODE_IP, AP_MODE_IP, SUBNET);
   _apPass.length() ? WiFi.softAP(getApSsid().c_str(), _apPass.c_str()) : WiFi.softAP(getApSsid().c_str());
   if (_apHandler) _apHandler();
 
-}  //startApMode
+}  // startApMode
 
 void PersWiFiManager::setConnectNonBlock(bool b) {
   _connectNonBlock = b;
-}  //setConnectNonBlock
+}  // setConnectNonBlock
 
 void PersWiFiManager::setupWiFiHandlers() {
-  IPAddress apIP(192, 168, 1, 1);
   _dnsServer->setErrorReplyCode(DNSReplyCode::NoError);
-  _dnsServer->start((byte)53, "*", apIP);  //used for captive portal in AP mode
+  _dnsServer->start((byte)53, "*", AP_MODE_IP);  // used for captive portal in AP mode
 
   _server->on("/wifi/list", [&](AsyncWebServerRequest* request) {
-    //scan for wifi networks
+    // scan for wifi networks
     int n = WiFi.scanNetworks();
 
-    //build array of indices
+    // build array of indices
     int ix[n];
     for (int i = 0; i < n; i++) ix[i] = i;
 
-    //sort by signal strength
+    // sort by signal strength
     for (int i = 0; i < n; i++)
       for (int j = 1; j < n - i; j++)
         if (WiFi.RSSI(ix[j]) > WiFi.RSSI(ix[j - 1])) std::swap(ix[j], ix[j - 1]);
-    //remove duplicates
+    // remove duplicates
     for (int i = 0; i < n; i++)
       for (int j = i + 1; j < n; j++)
         if (WiFi.SSID(ix[i]).equals(WiFi.SSID(ix[j])) &&
-          WiFi.encryptionType(ix[i]) == WiFi.encryptionType(ix[j])) ix[j] = -1;
+            WiFi.encryptionType(ix[i]) == WiFi.encryptionType(ix[j])) ix[j] = -1;
 
-    //build plain text string of wifi info
-    //format [signal%]:[encrypted 0 or 1]:SSID
+    // build plain text string of wifi info
+    // format [signal%]:[encrypted 0 or 1]:SSID
     String s = "";
     s.reserve(2050);
-    for (int i = 0; i < n && s.length() < 2000; i++) {  //check s.length to limit memory usage
+    for (int i = 0; i < n && s.length() < 2000; i++) {  // check s.length to limit memory usage
       if (ix[i] != -1) {
         s += String(i ? "\n" : "") + ((constrain(WiFi.RSSI(ix[i]), -100, -50) + 100) * 2) + "," +
-          ((WiFi.encryptionType(ix[i]) == ENC_TYPE_NONE) ? 0 : 1) + "," + WiFi.SSID(ix[i]);
+             ((WiFi.encryptionType(ix[i]) == ENC_TYPE_NONE) ? 0 : 1) + "," + WiFi.SSID(ix[i]);
       }
     }
 
-    //send string to client
+    // send string to client
     request->send(200, "text/plain", s);
-    });  //_server->on /wifi/list
+  });  //_server->on /wifi/list
 
   _server->on("/wifi/connect", HTTP_POST, [&](AsyncWebServerRequest* request) {
-    String ssid = request->arg("n"), pass = request->arg("p");
+    String ssid = request->arg("ssid"), pass = request->arg("pass");
     attemptConnection(ssid, pass);
     request->send(200, "text/html", "connecting...");
-    });  //_server->on /wifi/connect
+  });  //_server->on /wifi/connect
 
   _server->on("/wifi/ap", [&](AsyncWebServerRequest* request) {
     request->send(200, "text/html", "access point: " + getApSsid());
     startApMode();
-    });  //_server->on /wifi/ap
+  });  //_server->on /wifi/ap
 
   _server->on("/wifi/rst", [&](AsyncWebServerRequest* request) {
     request->send(200, "text/html", "Rebooting...");
     delay(100);
-    //ESP.restart();
-    // Adding Safer Restart method
+    // ESP.restart();
+    //  Adding Safer Restart method
     ESP.wdtDisable();
     ESP.reset();
     delay(2000);
-    });
+  });
 
-  _server->on("/", HTTP_GET, [&](AsyncWebServerRequest* request) {
-    request->send(LittleFS, "/wifi.html", "text/html");
-    });
-}  //setupWiFiHandlers
+}  // setupWiFiHandlers
 
 void PersWiFiManager::begin() {
   LittleFS.begin();
   _server->begin();
   setupWiFiHandlers();
+  _server->serveStatic("/", LittleFS, "/ap")
+      .setDefaultFile("wifi.html");
   _isRunning = true;
-}  //begin
+}  // begin
 
 void PersWiFiManager::loopServers() {
   _dnsServer->processNextRequest();
@@ -174,14 +175,14 @@ bool PersWiFiManager::isRunning() {
 String PersWiFiManager::getApSsid() {
   if (!_apSsid.length()) {
     _apSsid = "ESP8266-AP-" + String(random());
-  } 
+  }
   return _apSsid;
-}  //getApSsid
+}  // getApSsid
 
 void PersWiFiManager::setApCredentials(const String& apSsid, const String& apPass) {
   if (apSsid.length()) _apSsid = apSsid;
   if (apPass.length() >= 8) _apPass = apPass;
-}  //setApCredentials
+}  // setApCredentials
 
 void PersWiFiManager::onConnect(WiFiChangeHandlerFunction fn) {
   _connectHandler = fn;
