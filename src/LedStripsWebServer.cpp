@@ -15,22 +15,21 @@ void LedStripsWebServer::initEndpoints() {
 
 LedStripsWebServer::LedStripsWebServer(LedStripsManager* ledStripsManager) {
   this->ledStripsManager = ledStripsManager;
-  DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
-  DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", " GET, POST, OPTIONS, PUT, DELETE");
-  DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "Content-Type");
+  // DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
+  // DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", " GET, POST, OPTIONS, PUT, DELETE");
+  // DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "Content-Type");
   _isRunning = false;
 }
 
 void LedStripsWebServer::begin() {
-  if(server == NULL) {
-    this->server = new AsyncWebServer(80);
-    this->ws = new LedStripsWebSocket(LED_STRIPS_WS_URL, ledStripsManager);
-    this->server->addHandler((AsyncWebSocket*) this->ws);
-    initEndpoints();
-    this->server->serveStatic("/", LittleFS, "/")
-                  .setDefaultFile("index.html");
-  }
+  EEPROMManager::init();
   LittleFS.begin();
+  this->server = new AsyncWebServer(80);
+  this->ws = new LedStripsWebSocket(LED_STRIPS_WS_URL, ledStripsManager);
+  this->server->addHandler((AsyncWebSocket*)this->ws);
+  initEndpoints();
+  this->server->serveStatic("/", LittleFS, "/sta")
+      .setDefaultFile("index.html");
   server->begin();
   ws->begin();
   ledStripsManager->initColors();

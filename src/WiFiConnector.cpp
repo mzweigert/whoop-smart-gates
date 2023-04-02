@@ -6,7 +6,7 @@ conn_status WiFiConnector::status() {
 
 void WiFiConnector::loop() {
   if (_status == INITIALIZING) {
-    persWM->attemptConnection(ssid, password);
+    persWM->attemptConnection(ssid, password, localIp, gatewayIp);
     ledStripsManager->blink(BLUE);
   } else if (_status == CONNECTING) {
     persWM->handleWiFi();
@@ -22,13 +22,48 @@ void WiFiConnector::loop() {
   }
 }
 
+void WiFiConnector::initCredentials() {
+  LittleFS.begin();
+  File configFile = LittleFS.open(CONFIG_FILE_PATH, "r");
+  if (!configFile) {
+    Serial.println("Config file init null..");
+    return;
+  }
+
+  this->ssid = configFile.readStringUntil(LINE_TERMINATOR);
+  this->password = configFile.readStringUntil(LINE_TERMINATOR);
+  this->localIp = configFile.readStringUntil(LINE_TERMINATOR);
+  this->gatewayIp = configFile.readStringUntil(LINE_TERMINATOR);
+  configFile.close();
+  LittleFS.end();
+}
+
+void WiFiConnector::saveCredentials() {
+  LittleFS.begin();
+  File configFile = LittleFS.open(CONFIG_FILE_PATH, "w+");
+  if (!configFile) {
+    Serial.println("Config file init null.. creating.");
+    return;
+  }
+
+  configFile.print(WiFi.SSID());
+  configFile.print(LINE_TERMINATOR);
+  configFile.print(WiFi.psk());
+  configFile.print(LINE_TERMINATOR);
+  configFile.print(WiFi.localIP());
+  configFile.print(LINE_TERMINATOR);
+  configFile.print(WiFi.gatewayIP());
+  configFile.print(LINE_TERMINATOR);
+
+  configFile.close();
+  LittleFS.end();
+}
+
 WiFiConnector::WiFiConnector(LedStripsManager* ledStripsManager) {
   this->ledStripsManager = ledStripsManager;
-  this->ssid = EEPROMManager::readString(SSID_ADDRESS, 32);
-  this->password = EEPROMManager::readString(PASS_ADDRESS, 64);
-
   this->_status = INITIALIZING;
   this->_apModeStarted = false;
+  this->initCredentials();
 
   persWM = new PersWiFiManager();
   persWM->setConnectNonBlock(true);
@@ -38,11 +73,9 @@ WiFiConnector::WiFiConnector(LedStripsManager* ledStripsManager) {
   });
   persWM->onConnect([&]() {
     Serial.println("wifi connected");
-    Serial.println(WiFi.localIP());
     if (_apModeStarted) {
       persWM->stopServers();
-      EEPROMManager::writeString(SSID_ADDRESS, PASS_ADDRESS - 1, WiFi.SSID());
-      EEPROMManager::writeString(PASS_ADDRESS, EEPROM_SIZE, WiFi.psk());
+      saveCredentials();
       Serial.println("Restarting...");
       DeviceReset::reset();
     }
