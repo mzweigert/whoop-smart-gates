@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", function () {
         $th.appendChild(document.createTextNode('Gate order: ' + order));
         return $th;
     }
-    
+
     function createTableData(ws, savedColors) {
         let $td = document.createElement('td'),
             $container = document.createElement('div');
@@ -102,10 +102,12 @@ document.addEventListener("DOMContentLoaded", function () {
         };
         ws.onclose = function (e) {
             console.log("Disconnected");
+            document.location.reload();
         };
         ws.onerror = function (e) {
             console.log("ws error", e);
             console.log("Error");
+            document.location.reload();
         };
         ws.onmessage = function (e) {
             data = JSON.parse(e.data);
