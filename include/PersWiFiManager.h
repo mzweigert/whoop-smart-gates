@@ -20,7 +20,7 @@ class PersWiFiManager {
 
   PersWiFiManager();
 
-  bool attemptConnection(const String& ssid, const String& pass);
+  bool attemptConnection(const String& ssid, const String& pass, const String& ip, const String& gateway);
 
   void setConnectNonBlock(bool b);
 
@@ -47,7 +47,7 @@ class PersWiFiManager {
   void startApMode();
   void setApCredentials(const String& apSsid, const String& apPass = "");
   bool isConnectionTimeoutReached();
-  bool startConnection(const String& ssid, const String& pass);
+  bool startConnection(const String& ssid, const String& pass, const String& localIp, const String& gateway);
 
   AsyncWebServer* _server;
   DNSServer* _dnsServer;

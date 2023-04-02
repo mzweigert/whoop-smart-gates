@@ -13,11 +13,11 @@ PersWiFiManager::PersWiFiManager() {
   _isRunning = false;
 }  // PersWiFiManager
 
-bool PersWiFiManager::attemptConnection(const String& ssid, const String& pass) {
+bool PersWiFiManager::attemptConnection(const String& ssid, const String& pass, const String& ip, const String& gateway) {
   // attempt to connect to wifi
   if (_attemptConnectionHandler) _attemptConnectionHandler();
 
-  bool connectionStarted = startConnection(ssid, pass);
+  bool connectionStarted = startConnection(ssid, pass, ip, gateway);
   if (!connectionStarted) {
     return connectionStarted;
   }
@@ -45,15 +45,19 @@ void PersWiFiManager::handleWiFi() {
     _connectStartTime = 0;  // reset connect start time
     _freshConnectionAttempt = false;
   } else if (isConnectionTimeoutReached() &&
-             startConnection(WiFi.SSID(), WiFi.psk())) {
+             startConnection(WiFi.SSID(), WiFi.psk(), WiFi.localIP().toString(), WiFi.gatewayIP().toString())) {
     _connectStartTime = millis();
     Serial.println("Try " + String(_retries) + " connection failed!");
     _retries++;
   }
 }  // handleWiFi
 
-bool PersWiFiManager::startConnection(const String& ssid, const String& pass) {
+bool PersWiFiManager::startConnection(const String& ssid, const String& pass, const String& ip, const String& gateway) {
   WiFi.mode(WIFI_STA);
+  IPAddress localIp, gatewayIp;
+  if (localIp.fromString(ip) && gatewayIp.fromString(gateway)) {
+    WiFi.config(localIp, gatewayIp, SUBNET);
+  }
   if (ssid.length()) {
     WiFi.disconnect();  // To avoid issues (experience from WiFiManager)
     if (pass.length())
@@ -126,8 +130,9 @@ void PersWiFiManager::setupWiFiHandlers() {
   });  //_server->on /wifi/list
 
   _server->on("/wifi/connect", HTTP_POST, [&](AsyncWebServerRequest* request) {
-    String ssid = request->arg("ssid"), pass = request->arg("pass");
-    attemptConnection(ssid, pass);
+    String ssid = request->arg("ssid"), pass = request->arg("pass"),
+           ip = request->arg("ip"), gateway = request->arg("gateway");
+    attemptConnection(ssid, pass, ip, gateway);
     request->send(200, "text/html", "connecting...");
   });  //_server->on /wifi/connect
 

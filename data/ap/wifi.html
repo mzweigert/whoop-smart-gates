@@ -90,6 +90,11 @@
             <br>
             <input id='pass' name='pass' length=64 type='password' placeholder='password'>
             <br>
+            <input id='ip' name='ip' length=15 placeholder='lolcal ip' value='192.168.0.100' required="true"
+                pattern="^((\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$">
+            <br>
+            <input id='gateway' name='gateway' length=15 placeholder='ip gateway' value='192.168.0.1' required="true"
+                pattern="^((\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$">
             <button type='submit'>Connect</button>
         </form>
         <br>

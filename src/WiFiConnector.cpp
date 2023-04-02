@@ -6,7 +6,7 @@ conn_status WiFiConnector::status() {
 
 void WiFiConnector::loop() {
   if (_status == INITIALIZING) {
-    persWM->attemptConnection(ssid, password);
+    persWM->attemptConnection(ssid, password, localIp, gatewayIp);
     ledStripsManager->blink(BLUE);
   } else if (_status == CONNECTING) {
     persWM->handleWiFi();
@@ -32,6 +32,8 @@ void WiFiConnector::initCredentials() {
 
   this->ssid = configFile.readStringUntil(LINE_TERMINATOR);
   this->password = configFile.readStringUntil(LINE_TERMINATOR);
+  this->localIp = configFile.readStringUntil(LINE_TERMINATOR);
+  this->gatewayIp = configFile.readStringUntil(LINE_TERMINATOR);
   configFile.close();
   LittleFS.end();
 }
@@ -47,6 +49,10 @@ void WiFiConnector::saveCredentials() {
   configFile.print(WiFi.SSID());
   configFile.print(LINE_TERMINATOR);
   configFile.print(WiFi.psk());
+  configFile.print(LINE_TERMINATOR);
+  configFile.print(WiFi.localIP());
+  configFile.print(LINE_TERMINATOR);
+  configFile.print(WiFi.gatewayIP());
   configFile.print(LINE_TERMINATOR);
 
   configFile.close();
