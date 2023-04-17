@@ -15,6 +15,7 @@ private:
     AsyncWebServer* server;
     LedStripsWebSocket* ws;
     LedStripsManager* ledStripsManager;
+    unsigned long _startTimeServerMode;
     bool _isRunning;
     void initEndpoints();
 

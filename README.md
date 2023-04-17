@@ -104,11 +104,14 @@ Web page consists of 3 color pickers with each light power intensity for every g
 # TODO
 
 * [ ] Settings feature to change gates number or order. 
+* [ ] Settings feature to change light intensity blinking during connect to WiFi.
+* [ ] Settings feature to enable sleep mode for certain amount of time.
+* [ ] Settings feature to reset device every X hours.
 * [ ] Settings feature to remove or change WiFi credentials during led server running
 * [ ] Create junit tests finally :) 
 
 
 # Limitations
 - After connecting to WiFi network, device needs to be reseted due to async web servers overlaping
-- From time to time software crashes and watchdog resets device - don't worry, it should connect to your WiFi and run led strips web server again - if not, just unplug and plug device to power again.
+- Every 12 hours device needs to be reset due to WiFi issues (for some reason server stops receive requests after few days of constantly work) - don't worry, it should connect to your WiFi and run led strips web server again - if not, just unplug and plug device to power again.
 

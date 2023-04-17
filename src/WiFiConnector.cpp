@@ -15,6 +15,10 @@ void WiFiConnector::loop() {
     if (!persWM->isRunning()) {
       persWM->begin();
     }
+    if (_startTimeApMode && DeviceReset::shouldReset &&
+        millis() - _startTimeApMode >= RESET_AP_MODE_TIME) {
+      DeviceReset::reset();
+    }
     persWM->loopServers();
     ledStripsManager->blink(RED);
   } else {
@@ -45,16 +49,6 @@ void WiFiConnector::saveCredentials() {
     Serial.println("Config file init null.. creating.");
     return;
   }
-
-  configFile.print(WiFi.SSID());
-  configFile.print(LINE_TERMINATOR);
-  configFile.print(WiFi.psk());
-  configFile.print(LINE_TERMINATOR);
-  configFile.print(WiFi.localIP());
-  configFile.print(LINE_TERMINATOR);
-  configFile.print(WiFi.gatewayIP());
-  configFile.print(LINE_TERMINATOR);
-
   configFile.close();
   LittleFS.end();
 }
@@ -86,6 +80,7 @@ WiFiConnector::WiFiConnector(LedStripsManager* ledStripsManager) {
     Serial.println("AP MODE Initialized!");
     Serial.println(persWM->getApSsid());
     _status = IN_AP_MODE;
+    _startTimeApMode = millis();
     _apModeStarted = true;
   });
 }
