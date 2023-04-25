@@ -33,10 +33,15 @@ void LedStripsWebServer::begin() {
   server->begin();
   ws->begin();
   ledStripsManager->initColors();
+  _startTimeServerMode = millis();
   _isRunning = true;
 }
 
 void LedStripsWebServer::loop() {
+  if (_startTimeServerMode && DeviceReset::shouldReset &&
+        millis() - _startTimeServerMode >= RESET_STA_MODE_TIME) {
+      DeviceReset::reset();
+  }
   this->ws->loop();
 }
 

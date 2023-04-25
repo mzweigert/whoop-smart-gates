@@ -25,6 +25,7 @@ class WiFiConnector {
   LedStripsManager* ledStripsManager;
   String ssid, password, localIp, gatewayIp;
   conn_status _status;
+  unsigned long _startTimeApMode;
   bool _apModeStarted;  // needed to save credentials and reset device due to servers overlaping
 
   void initCredentials();
