@@ -49,6 +49,14 @@ void WiFiConnector::saveCredentials() {
     Serial.println("Config file init null.. creating.");
     return;
   }
+  configFile.print(WiFi.SSID());
+  configFile.print(LINE_TERMINATOR);
+  configFile.print(WiFi.psk());
+  configFile.print(LINE_TERMINATOR);
+  configFile.print(WiFi.localIP());
+  configFile.print(LINE_TERMINATOR);
+  configFile.print(WiFi.gatewayIP());
+  configFile.print(LINE_TERMINATOR);
   configFile.close();
   LittleFS.end();
 }
